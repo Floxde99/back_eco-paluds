@@ -1,4 +1,4 @@
-const {PrismaClient} = require('@prisma/client');
+const {PrismaClient} = require('../generated/prisma/client');
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 
@@ -8,8 +8,8 @@ exports.addUser = async (req, res) => {
             const hashedPassword = await bcrypt.hash(req.body.password, 10);
             const newUser = await prisma.user.create({
                 data: {
-                    firstName: req.body.firstName,
-                    lastName: req.body.lastName,
+                    first_name: req.body.firstName,
+                    last_name: req.body.lastName,
                     email: req.body.email,
                     password: hashedPassword,
                     phone: req.body.phone,
