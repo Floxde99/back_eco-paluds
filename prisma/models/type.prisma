@@ -1,0 +1,5 @@
+model Type {
+  id_type   Int    @id @default(autoincrement())
+  name      String
+  companyTypes CompanyType[]
+}

@@ -1,0 +1,16 @@
+model Input {
+  id_input      Int      @id @default(autoincrement())
+  resource_id   String?
+  name          String
+  category      String
+  unit_measure  String
+  description   String?
+  status        String
+  creation_date DateTime @default(now())
+  last_update   DateTime @updatedAt
+  company_id    Int
+  company       Company  @relation(fields: [company_id], references: [id_company])
+  family_id     Int?
+  family        Family?  @relation(fields: [family_id], references: [id_family])
+  flows         Flow[]
+}

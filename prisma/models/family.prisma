@@ -1,0 +1,6 @@
+model Family {
+  id_family Int    @id @default(autoincrement())
+  name      String
+  inputs    Input[]
+  outputs   Output[]
+}

@@ -1,0 +1,13 @@
+model Subscription {
+  id_subscription     Int      @id @default(autoincrement())
+  stripe_id           String   @unique
+  subscription_type   String
+  start_date          DateTime
+  end_date            DateTime?
+  price               Float
+  status              String
+  ai_consumption      Int      @default(0)
+  billing_threshold   Float
+  user_id             Int
+  user                User     @relation(fields: [user_id], references: [id_user])
+}

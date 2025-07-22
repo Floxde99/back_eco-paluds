@@ -1,0 +1,28 @@
+{
+  "name": "eco-palud-back",
+  "version": "1.0.0",
+  "description": "api application de commerce circulaire de la zone des Paluds",
+  "license": "ISC",
+  "prisma": {
+    "schema": "./prisma"
+  },
+  "author": "Florian Faucher",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.0",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "postman": "^0.2.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.11.1"
+  }
+}

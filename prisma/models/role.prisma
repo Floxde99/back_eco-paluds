@@ -1,0 +1,4 @@
+model Role {
+  id_role Int    @id @default(autoincrement())
+  name    String
+}

@@ -1,0 +1,10 @@
+model Transport {
+  transport_id     Int      @id @default(autoincrement())
+  collection_date  DateTime
+  status           String
+  cost             Float
+  distance         Float
+  comments         String?
+  partner_id       Int
+  partner          Partner  @relation(fields: [partner_id], references: [partner_id])
+}
