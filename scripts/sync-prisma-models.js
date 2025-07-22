@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+//est-ce utile ?
 
 // Script pour synchroniser les modèles séparés avec le schema principal
 function syncPrismaModels() {
