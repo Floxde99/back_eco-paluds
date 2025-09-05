@@ -22,6 +22,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/', userRouter);
+app.use('/contact', contactRouter); // Ajouter cette ligne
 
 app.listen(process.env.PORT, (err) => {
     if (err) {
