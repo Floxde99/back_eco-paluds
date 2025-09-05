@@ -5,9 +5,12 @@ model User {
   email           String    @unique
   password        String
   phone           String?
-  role            String
+  confirmEmail    Boolean   @default(false)
+  roleId          Int?
+  roleObj         Role?   @relation(fields: [roleId], references: [id_role])
   creation_date   DateTime  @default(now())
   last_connection DateTime?
   companies       Company[]
   subscriptions   Subscription[]
+  tokens          RefreshToken[]
 }
