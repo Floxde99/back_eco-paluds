@@ -4,6 +4,7 @@ require('dotenv').config();
 const app = express();
 const userRouter = require('./routers/userRouter');
 const contactRouter = require('./routers/contactRouter');
+require('fs');
 
 app.use(cors({
     origin: [
@@ -28,3 +29,7 @@ app.listen(process.env.PORT, (err) => {
         console.log(`connecté sur le port ${process.env.PORT}`);
     }
 });
+
+console.log('cwd:', process.cwd());
+console.log('MAIL_HOST:', process.env.MAIL_HOST, 'MAIL_PORT:', process.env.MAIL_PORT);
+console.log('tokenUtils exists:', require('fs').existsSync(__dirname + '/services/tokenUtils.js'));
