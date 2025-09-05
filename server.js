@@ -13,7 +13,7 @@ app.use(cors({
         'http://127.0.0.1:3000',
         'http://localhost:3000',
         'https://eco-paluds.fr',
-        'https://api.eco-paluds.fr'
+        'https://www.eco-paluds.fr'
     ], 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
