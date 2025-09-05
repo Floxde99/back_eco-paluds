@@ -1,13 +1,19 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-const port = parseInt(process.env.MAIL_PORT || '0', 10) || undefined;
-const secure = port === 465; // port 465 => secure true (SMTPS)
+console.log('🔍 Mailer starting with ENV:', {
+  MAIL_HOST: process.env.MAIL_HOST,
+  MAIL_PORT: process.env.MAIL_PORT
+});
+
+// Forcer les valeurs (éviter localhost)
+const hostValue = process.env.MAIL_HOST || 'ssl0.ovh.net';
+const portValue = parseInt(process.env.MAIL_PORT || '465', 10);
 
 const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port,
-  secure,
+  host: hostValue,
+  port: portValue,
+  secure: portValue === 465,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
