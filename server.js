@@ -1,6 +1,6 @@
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 const app = express();
 const userRouter = require('./routers/userRouter');
 const contactRouter = require('./routers/contactRouter');
@@ -31,5 +31,5 @@ app.listen(process.env.PORT, (err) => {
 });
 
 console.log('cwd:', process.cwd());
-console.log('MAIL_HOST:', process.env.MAIL_HOST, 'MAIL_PORT:', process.env.MAIL_PORT);
+console.log('ENV check -> MAIL_HOST:', process.env.MAIL_HOST, 'MAIL_PORT:', process.env.MAIL_PORT, 'PORT:', process.env.PORT);
 console.log('tokenUtils exists:', require('fs').existsSync(__dirname + '/services/tokenUtils.js'));
