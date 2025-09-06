@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "description": "api application de commerce circulaire de la zone des Paluds",
   "license": "ISC",
-  "prisma": {
-    "schema": "./prisma"
-  },
   "author": "Florian Faucher",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
-    "sync-models": "node scripts/sync-prisma-models.js"
+    "sync-models": "node scripts/sync-prisma-models.js",
+    "prisma:generate": "npm run sync-models && npx prisma generate",
+    "prisma:migrate": "npm run sync-models && npx prisma migrate dev",
+    "prisma:deploy": "npm run sync-models && npx prisma migrate deploy",
+    "prisma:studio": "npm run sync-models && npx prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",
