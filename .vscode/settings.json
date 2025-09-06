@@ -1,0 +1,6 @@
+{
+  "files.exclude": {
+    "prisma/schema.header.prisma": true
+  },
+  "prisma.prismaSchemaPath": "./prisma/schema.prisma"
+}
