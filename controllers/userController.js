@@ -118,6 +118,7 @@ exports.register = async (req, res) => {
         phone: phone?.trim() || null,
         roleId: roleIdValue,
       },
+      include: { roleObj: true }
     });
 
     console.log("✅ Utilisateur créé avec succès:", {
@@ -146,7 +147,8 @@ exports.register = async (req, res) => {
         firstName: newUser.first_name,
         lastName: newUser.last_name,
         email: newUser.email,
-        role: newUser.role,
+        roleId: newUser.roleId,
+        role: newUser.roleObj?.name || null,
       },
     });
   } catch (error) {
@@ -204,6 +206,7 @@ exports.postLogin = async (req, res) => {
     // Vérifier si l'utilisateur existe
     const user = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
+      include: { roleObj: true }
     });
 
     if (!user) {
@@ -229,7 +232,7 @@ exports.postLogin = async (req, res) => {
       where: { id_user: user.id_user },
       data: { last_connection: new Date() },
     });
-    const accessToken = generateAccessToken(user.id);
+    const accessToken = generateAccessToken(user.id_user);
     const refreshToken = generateRefreshToken();
     await prisma.refreshToken.create({
       data: {
@@ -255,7 +258,7 @@ exports.postLogin = async (req, res) => {
         firstName: user.first_name,
         lastName: user.last_name,
         email: user.email,
-        role: user.role,
+        role: user.roleObj?.name || 'user',
         lastConnection: user.last_connection,
       },
     });
