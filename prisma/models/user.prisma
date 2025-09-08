@@ -5,6 +5,7 @@ model User {
   email           String    @unique
   password        String
   phone           String?
+  avatar_url      String?   // ← AJOUTER UNIQUEMENT CETTE LIGNE
   confirmEmail    Boolean   @default(false)
   roleId          Int?
   roleObj         Role?   @relation(fields: [roleId], references: [id_role])

@@ -1,9 +1,11 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 const userRouter = require('./routers/userRouter');
 const contactRouter = require('./routers/contactRouter');
+const dashboardRouter = require('./routers/dashboardRouter');
 require('fs');
 
 app.use(cors({
@@ -21,8 +23,13 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir les fichiers statiques (avatars)
+app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
+
 app.use('/', userRouter);
 app.use('/contact', contactRouter); // Ajouter cette ligne
+app.use('/dashboard', dashboardRouter);
 
 app.listen(process.env.PORT, (err) => {
     if (err) {

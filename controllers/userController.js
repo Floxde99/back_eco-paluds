@@ -1,11 +1,43 @@
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
 const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../services/tokenUtils");
 const { sendMail } = require('../services/mailer');
+
+// Configuration de multer pour l'upload d'avatars
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/avatars/');
+  },
+  filename: (req, file, cb) => {
+    // Générer un nom unique pour éviter les conflits
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + req.user.userId + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// Filtre pour n'accepter que les images
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Seules les images sont autorisées'), false);
+  }
+};
+
+// Configuration multer
+const uploadAvatar = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  }
+}).single('avatar');
 
 exports.register = async (req, res) => {
   try {
@@ -290,4 +322,291 @@ exports.logout = async (req, res) => {
   await prisma.refreshToken.deleteMany({ where: { token } });
   res.clearCookie("refreshToken");
   res.json({ message: "Déconnexion réussie" });
+};
+
+// --- New route handlers (full implementation) ---
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const user = await prisma.user.findUnique({
+      where: { id_user: userId },
+      include: { 
+        roleObj: true,
+        companies: true,
+        subscriptions: {
+          where: { status: 'active' },
+          orderBy: { start_date: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    return res.status(200).json({
+      user: {
+        id: user.id_user,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        email: user.email,
+        phone: user.phone,
+        avatar_url: user.avatar_url,
+        confirmEmail: user.confirmEmail,
+        role: user.roleObj?.name || 'user',
+        creationDate: user.creation_date,
+        lastConnection: user.last_connection,
+        companiesCount: user.companies.length,
+        subscription: user.subscriptions[0] || null
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erreur getProfile:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { firstName, lastName, phone, avatar_url } = req.body;
+
+    // Validation des données
+    const updateData = {};
+    if (firstName) updateData.first_name = firstName.trim();
+    if (lastName) updateData.last_name = lastName.trim();
+    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    if (avatar_url !== undefined) updateData.avatar_url = avatar_url?.trim() || null;
+
+    // Vérifier que l'utilisateur existe
+    const existingUser = await prisma.user.findUnique({
+      where: { id_user: userId }
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Mettre à jour le profil
+    const updatedUser = await prisma.user.update({
+      where: { id_user: userId },
+      data: updateData,
+      include: { roleObj: true }
+    });
+
+    return res.status(200).json({
+      message: 'Profil mis à jour avec succès',
+      user: {
+        id: updatedUser.id_user,
+        firstName: updatedUser.first_name,
+        lastName: updatedUser.last_name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        avatar_url: updatedUser.avatar_url,
+        role: updatedUser.roleObj?.name || 'user'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erreur updateProfile:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Configuration multer pour l'upload d'avatar
+    const multer = require('multer');
+    const path = require('path');
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, 'public/avatars/');
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'avatar-' + userId + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
+    });
+
+    const fileFilter = (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Seules les images sont autorisées'), false);
+      }
+    };
+
+    const upload = multer({
+      storage: storage,
+      fileFilter: fileFilter,
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max
+      }
+    }).single('avatar');
+
+    // Traiter l'upload avec multer
+    upload(req, res, async (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Fichier trop volumineux (max 5MB)' });
+          }
+        }
+        return res.status(400).json({ error: err.message || 'Erreur lors de l\'upload' });
+      }
+
+      // Vérifier si un fichier a été uploadé
+      if (!req.file) {
+        return res.status(400).json({ error: 'Aucun fichier fourni' });
+      }
+
+      // Construire l'URL de l'avatar
+      const avatarUrl = `/avatars/${req.file.filename}`;
+
+      // Mettre à jour l'avatar de l'utilisateur dans la base de données
+      const updatedUser = await prisma.user.update({
+        where: { id_user: userId },
+        data: { avatar_url: avatarUrl },
+        select: {
+          id_user: true,
+          first_name: true,
+          last_name: true,
+          avatar_url: true
+        }
+      });
+
+      return res.status(200).json({
+        message: 'Avatar uploadé avec succès',
+        user: {
+          id: updatedUser.id_user,
+          firstName: updatedUser.first_name,
+          lastName: updatedUser.last_name,
+          avatar_url: updatedUser.avatar_url
+        }
+      });
+    });
+  } catch (error) {
+    console.error('❌ Erreur uploadAvatar:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.getCompletion = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const user = await prisma.user.findUnique({
+      where: { id_user: userId },
+      include: { companies: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Calculer le pourcentage de complétion du profil
+    let completionScore = 0;
+    const totalFields = 8; // Nombre total de champs à remplir
+
+    // Champs obligatoires (déjà remplis lors de l'inscription)
+    if (user.first_name) completionScore++;
+    if (user.last_name) completionScore++;
+    if (user.email) completionScore++;
+    if (user.confirmEmail) completionScore++;
+
+    // Champs optionnels
+    if (user.phone) completionScore++;
+    if (user.avatar_url) completionScore++;
+    if (user.companies.length > 0) completionScore++;
+    if (user.roleId) completionScore++;
+
+    const completionPercentage = Math.round((completionScore / totalFields) * 100);
+
+    return res.status(200).json({
+      completion: {
+        percentage: completionPercentage,
+        score: completionScore,
+        total: totalFields,
+        missing: {
+          phone: !user.phone,
+          avatar: !user.avatar_url,
+          emailConfirmed: !user.confirmEmail,
+          company: user.companies.length === 0,
+          role: !user.roleId
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erreur getCompletion:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.getCompanies = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const companies = await prisma.company.findMany({
+      where: { owner_id: userId },
+      include: {
+        companyTypes: {
+          include: { type: true }
+        },
+        inputs: {
+          select: {
+            id_input: true,
+            name: true,
+            status: true
+          }
+        },
+        outputs: {
+          select: {
+            id_output: true,
+            name: true,
+            status: true
+          }
+        }
+      },
+      orderBy: { creation_date: 'desc' }
+    });
+
+    const companiesWithStats = companies.map(company => ({
+      id: company.id_company,
+      name: company.name,
+      siret: company.siret,
+      sector: company.sector,
+      address: company.address,
+      latitude: company.latitude,
+      longitude: company.longitude,
+      phone: company.phone,
+      email: company.email,
+      website: company.website,
+      description: company.description,
+      validationStatus: company.validation_status,
+      creationDate: company.creation_date,
+      lastUpdate: company.last_update,
+      types: company.companyTypes.map(ct => ct.type.name),
+      stats: {
+        inputsCount: company.inputs.length,
+        outputsCount: company.outputs.length,
+        activeInputs: company.inputs.filter(i => i.status === 'active').length,
+        activeOutputs: company.outputs.filter(o => o.status === 'active').length
+      }
+    }));
+
+    return res.status(200).json({
+      companies: companiesWithStats,
+      total: companiesWithStats.length
+    });
+  } catch (error) {
+    console.error('❌ Erreur getCompanies:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
 };
