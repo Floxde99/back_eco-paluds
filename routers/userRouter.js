@@ -5,7 +5,10 @@ const router = express.Router();
 
 router.post('/addUser', userController.register);
 router.post('/login', userController.postLogin);
-router.post("/logout", authGuard, userController.logout);
+// Allow logout even when access token is missing/expired so clients can always
+// clear local state and the server can attempt to revoke refresh tokens
+// idempotently. authGuard removed intentionally.
+router.post("/logout", userController.logout);
 
 router.get('/user/profile', authGuard, userController.getProfile);
 router.put('/user/profile', authGuard, userController.updateProfile);

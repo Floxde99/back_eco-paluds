@@ -3,41 +3,24 @@ const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const path = require("path");
+const sharp = require('sharp');
+const fsPromises = require('fs').promises;
 const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../services/tokenUtils");
 const { sendMail } = require('../services/mailer');
 
-// Configuration de multer pour l'upload d'avatars
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/avatars/');
-  },
-  filename: (req, file, cb) => {
-    // Générer un nom unique pour éviter les conflits
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + req.user.userId + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
 
-// Filtre pour n'accepter que les images
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Seules les images sont autorisées'), false);
-  }
-};
+// Whitelist des mimetypes autorisés (front-provided MIME)
+// Note: upload handling uses an inline multer.memoryStorage instance inside
+// `uploadAvatar` and performs server-side signature checks. The old
+// ALLOWED_MIMES/fileFilter declarations were unused and have been removed to
+// avoid confusion.
 
-// Configuration multer
-const uploadAvatar = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
-  }
-}).single('avatar');
+// Note: la configuration de stockage est gérée dynamiquement dans la fonction `exports.uploadAvatar`
+// (multer.memoryStorage est utilisée pour permettre la conversion via sharp). La configuration
+// diskStorage et la constante uploadAvatar en haut du fichier ne sont plus nécessaires.
 
 exports.register = async (req, res) => {
   try {
@@ -296,6 +279,10 @@ exports.postLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Erreur lors de la connexion:", error);
+    // Log stack for debugging in development
+    if (process.env.NODE_ENV === 'development' && error && error.stack) {
+      console.error(error.stack);
+    }
     res.status(500).json({
       error: "Erreur interne du serveur",
       details:
@@ -316,12 +303,28 @@ exports.refresh = async (req, res) => {
   res.json({ accessToken: newAccessToken });
 };
 exports.logout = async (req, res) => {
-  const token = req.cookies.refreshToken;
-  if (!token) return res.status(401).json({ error: "Pas de token" });
+  try {
+    const token = (req.cookies && req.cookies.refreshToken) ? req.cookies.refreshToken : null;
 
-  await prisma.refreshToken.deleteMany({ where: { token } });
-  res.clearCookie("refreshToken");
-  res.json({ message: "Déconnexion réussie" });
+    // Toujours effacer le cookie côté client
+    res.clearCookie('refreshToken');
+
+    // Si un token est présent, tenter de le supprimer en base (silencieux si introuvable)
+    if (token) {
+      try {
+        await prisma.refreshToken.deleteMany({ where: { token } });
+      } catch (dbErr) {
+        console.warn('Warn: erreur suppression refreshToken en DB (ignorée):', dbErr.message || dbErr);
+      }
+    }
+
+    return res.status(200).json({ message: 'Déconnexion réussie' });
+  } catch (error) {
+    console.error('❌ Erreur lors de la déconnexion:', error);
+    // Idempotence : considérer la déconnexion comme réussie côté client
+    try { res.clearCookie('refreshToken'); } catch (e) {}
+    return res.status(200).json({ message: 'Déconnexion réussie' });
+  }
 };
 
 // --- New route handlers (full implementation) ---
@@ -418,56 +421,100 @@ exports.uploadAvatar = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Configuration multer pour l'upload d'avatar
-    const multer = require('multer');
-    const path = require('path');
-
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, 'public/avatars/');
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'avatar-' + userId + '-' + uniqueSuffix + path.extname(file.originalname));
-      }
-    });
-
-    const fileFilter = (req, file, cb) => {
-      if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-      } else {
-        cb(new Error('Seules les images sont autorisées'), false);
-      }
-    };
-
+    // multer in memory to process with sharp
+    // NOTE: we do not rely on client-provided mimetype; the real file type is checked
+    // server-side via magic bytes (FileType.fromBuffer)
     const upload = multer({
-      storage: storage,
-      fileFilter: fileFilter,
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB max
-      }
+      storage: multer.memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 }
     }).single('avatar');
 
-    // Traiter l'upload avec multer
     upload(req, res, async (err) => {
       if (err) {
-        if (err instanceof multer.MulterError) {
-          if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'Fichier trop volumineux (max 5MB)' });
-          }
+        if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'Fichier trop volumineux (max 5MB)' });
         }
         return res.status(400).json({ error: err.message || 'Erreur lors de l\'upload' });
       }
 
-      // Vérifier si un fichier a été uploadé
       if (!req.file) {
         return res.status(400).json({ error: 'Aucun fichier fourni' });
       }
 
-      // Construire l'URL de l'avatar
-      const avatarUrl = `/avatars/${req.file.filename}`;
+      // Obtenir le buffer : multer peut stocker en mémoire (req.file.buffer) ou sur disque (req.file.path)
+      let fileBuffer;
+      if (req.file.buffer && req.file.buffer.length) {
+        fileBuffer = req.file.buffer;
+      } else if (req.file.path) {
+        try {
+          fileBuffer = await fsPromises.readFile(req.file.path);
+        } catch (readErr) {
+          console.error('❌ Erreur lecture fichier uploadé:', readErr);
+          return res.status(500).json({ error: 'Erreur lecture fichier uploadé' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Aucun contenu de fichier disponible' });
+      }
 
-      // Mettre à jour l'avatar de l'utilisateur dans la base de données
+      // Vérifier le type réel du fichier via signature (magic bytes)
+      let detectedMime = null;
+      try {
+        // Détecter le type MIME via les magic bytes (signatures)
+        const header = fileBuffer.slice(0, 12);
+        
+        if (header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF) {
+          detectedMime = 'image/jpeg';
+        } else if (header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47) {
+          detectedMime = 'image/png';
+        } else if (header.slice(0, 4).toString() === 'RIFF' && header.slice(8, 12).toString() === 'WEBP') {
+          detectedMime = 'image/webp';
+        } else if (header.slice(4, 8).toString() === 'ftyp' && (
+          header.slice(8, 12).toString() === 'avif' || 
+          header.slice(8, 12).toString() === 'avis'
+        )) {
+          detectedMime = 'image/avif';
+        }
+      } catch (ftErr) {
+        console.error('❌ Erreur détection type fichier:', ftErr);
+        return res.status(400).json({ error: 'Impossible de déterminer le type du fichier' });
+      }
+
+      if (!detectedMime) {
+        return res.status(400).json({ error: 'Type de fichier non reconnu - formats supportés: JPEG, PNG, WebP, AVIF' });
+      }
+
+      // Autoriser seulement les types réellement supportés
+      const ALLOWED_SIGNATURE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+      if (!ALLOWED_SIGNATURE_MIMES.includes(detectedMime)) {
+        return res.status(415).json({ error: `Format non supporté : ${detectedMime}` });
+      }
+
+      // Ensure avatars dir exists
+      const outDir = path.join(__dirname, '..', 'public', 'avatars');
+      await fsPromises.mkdir(outDir, { recursive: true });
+
+      // Convert to webp with sharp
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const filename = `avatar-${userId}-${uniqueSuffix}.webp`;
+      const outPath = path.join(outDir, filename);
+
+      try {
+        // convert and save (utiliser fileBuffer qui vient de la mémoire ou du disque)
+        await sharp(fileBuffer)
+          .rotate() // auto-rotate based on EXIF
+          .resize({ width: 800, withoutEnlargement: true })
+          .webp({ quality: 75 })
+          .toFile(outPath);
+      } catch (sharpErr) {
+        console.error('❌ Sharp conversion failed:', sharpErr);
+        // Give a clearer error to the client when format unsupported by Sharp
+        const errMessage = sharpErr && sharpErr.message ? sharpErr.message : 'Erreur conversion image';
+        return res.status(422).json({ error: 'Impossible de convertir l\'image', details: errMessage });
+      }
+
+      const avatarUrl = `/avatars/${filename}`;
+
+      // Update DB
       const updatedUser = await prisma.user.update({
         where: { id_user: userId },
         data: { avatar_url: avatarUrl },
@@ -480,7 +527,7 @@ exports.uploadAvatar = async (req, res) => {
       });
 
       return res.status(200).json({
-        message: 'Avatar uploadé avec succès',
+        message: 'Avatar uploadé et converti en webp avec succès',
         user: {
           id: updatedUser.id_user,
           firstName: updatedUser.first_name,
