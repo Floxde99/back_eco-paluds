@@ -4,6 +4,8 @@ const authGuard = require('../services/authGuard');
 const router = express.Router();
 
 router.post('/addUser', userController.register);
+router.get('/confirm-email/:token', userController.confirmEmail);
+router.post('/confirm-email', userController.confirmEmailPost);
 router.post('/login', userController.postLogin);
 // Allow logout even when access token is missing/expired so clients can always
 // clear local state and the server can attempt to revoke refresh tokens

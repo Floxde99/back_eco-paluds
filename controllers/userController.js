@@ -1,40 +1,40 @@
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken'); // ← AJOUT DE L'IMPORT MANQUANT
 const multer = require("multer");
 const path = require("path");
 const sharp = require('sharp');
 const fsPromises = require('fs').promises;
+const { z } = require('zod');
 const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../services/tokenUtils");
 const { sendMail } = require('../services/mailer');
 
-
-// Whitelist des mimetypes autorisés (front-provided MIME)
-// Note: upload handling uses an inline multer.memoryStorage instance inside
-// `uploadAvatar` and performs server-side signature checks. The old
-// ALLOWED_MIMES/fileFilter declarations were unused and have been removed to
-// avoid confusion.
-
-// Note: la configuration de stockage est gérée dynamiquement dans la fonction `exports.uploadAvatar`
-// (multer.memoryStorage est utilisée pour permettre la conversion via sharp). La configuration
-// diskStorage et la constante uploadAvatar en haut du fichier ne sont plus nécessaires.
+// Schémas de validation Zod pour la sécurité
+const registerSchema = z.object({
+  firstName: z.string().min(1).max(50).trim(),
+  lastName: z.string().min(1).max(50).trim(),
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/), // Au moins 8 chars, maj, min, chiffre
+  confirmPassword: z.string(),
+  phone: z.string().optional(),
+  role: z.string().optional(),
+}).strip() // ← AJOUTER .strip() pour ignorer les champs inconnus comme "company"
+.refine(data => data.password === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
+});
 
 exports.register = async (req, res) => {
   try {
-    // Debug: Logger les données reçues complètes
-    console.log("🔍 Données reçues complètes:", req.body);
+    // Valider les données avec Zod
+    const validatedData = registerSchema.parse(req.body);
 
-    // Normaliser les noms de champs - accepter les deux formats
-    const firstName = req.body.firstName || req.body.first_name;
-    const lastName = req.body.lastName || req.body.last_name;
-    const email = req.body.email;
-    const password = req.body.password;
-    const confirmPassword = req.body.confirmPassword;
-    const phone = req.body.phone;
-    const role = req.body.role || "user";
+    // Utiliser les données validées
+    const { firstName, lastName, email, password, confirmPassword, phone, role } = validatedData;
 
     console.log("🔍 Données normalisées:", {
       firstName,
@@ -46,14 +46,8 @@ exports.register = async (req, res) => {
       confirmPasswordLength: confirmPassword?.length,
     });
 
-    // Debug: Logger les mots de passe (masqués pour la sécurité)
-    console.log("🔐 Validation mots de passe:", {
-      password: `${password?.substring(0, 3)}***`,
-      confirmPassword: `${confirmPassword?.substring(0, 3)}***`,
-      areEqual: password === confirmPassword,
-      passwordType: typeof password,
-      confirmPasswordType: typeof confirmPassword,
-    });
+    // SUPPRESSION des logs de mots de passe pour la sécurité
+    // console.log("🔐 Validation mots de passe:", { ... });
 
     // Validation des champs requis
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -80,27 +74,13 @@ exports.register = async (req, res) => {
     const cleanPassword = password.trim();
     const cleanConfirmPassword = confirmPassword.trim();
 
-    console.log("🔐 Après trim:", {
-      passwordLength: cleanPassword.length,
-      confirmPasswordLength: cleanConfirmPassword.length,
-      areEqual: cleanPassword === cleanConfirmPassword,
-    });
+    // SUPPRESSION des logs de mots de passe pour la sécurité
+    // console.log("🔐 Après trim:", { ... });
 
     if (cleanPassword !== cleanConfirmPassword) {
       return res.status(400).json({
         error: "Les mots de passe ne correspondent pas",
-        debug: {
-          passwordLength: cleanPassword.length,
-          confirmPasswordLength: cleanConfirmPassword.length,
-          password: cleanPassword
-            .split("")
-            .map((c) => c.charCodeAt(0))
-            .join(","),
-          confirmPassword: cleanConfirmPassword
-            .split("")
-            .map((c) => c.charCodeAt(0))
-            .join(","),
-        },
+        // SUPPRESSION du debug avec les mots de passe
       });
     }
 
@@ -115,7 +95,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(cleanPassword, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // Resolve role name to roleId if possible (schema uses relation)
     let roleIdValue = null;
@@ -142,16 +122,62 @@ exports.register = async (req, res) => {
     });
 
     // Retourner une réponse JSON au lieu d'une redirection
-    // Envoi d'un email de bienvenue (non bloquant)
+    // Envoi d'un email de confirmation (non bloquant)
     (async () => {
       try {
-        const subject = 'Bienvenue sur Eco-Paluds !';
-        const text = `Bonjour ${newUser.first_name} ${newUser.last_name},\n\nMerci de vous être inscrit(e) sur Eco-Paluds.`;
-        const html = `<p>Bonjour <strong>${newUser.first_name} ${newUser.last_name}</strong>,</p><p>Merci de vous être inscrit(e) sur <em>Eco-Paluds</em>.</p>`;
+        // Générer un token de confirmation (valide 24h)
+        const confirmationToken = jwt.sign(
+          { userId: newUser.id_user, email: newUser.email },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        // Créer le lien de confirmation (utilise maintenant POST)
+        const confirmationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/confirm-email`;
+
+        const subject = 'Confirmez votre email - Eco-Paluds';
+        const text = `Bonjour ${newUser.first_name} ${newUser.last_name},
+
+Bienvenue sur Eco-Paluds !
+
+Pour finaliser votre inscription et accéder à votre compte, veuillez confirmer votre email en cliquant sur ce lien :
+${confirmationLink}
+
+Votre token de confirmation : ${confirmationToken}
+
+Ce lien expirera dans 24 heures.
+
+Si vous n'avez pas créé de compte sur Eco-Paluds, ignorez cet email.
+
+Cordialement,
+L'équipe Eco-Paluds`;
+
+        const html = `
+<p>Bonjour <strong>${newUser.first_name} ${newUser.last_name}</strong>,</p>
+
+<p>Bienvenue sur <strong>Eco-Paluds</strong> !</p>
+
+<p>Pour finaliser votre inscription et accéder à votre compte, veuillez confirmer votre email en cliquant sur le bouton ci-dessous :</p>
+
+<p style="text-align: center; margin: 30px 0;">
+  <a href="${confirmationLink}?token=${confirmationToken}"
+     style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    Confirmer mon email
+  </a>
+</p>
+
+<p><small>Token de confirmation : ${confirmationToken}</small></p>
+<p><small>Ce lien expirera dans 24 heures.</small></p>
+<p><small>Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur : ${confirmationLink}?token=${confirmationToken}</small></p>
+
+<p>Si vous n'avez pas créé de compte sur Eco-Paluds, ignorez cet email.</p>
+
+<p>Cordialement,<br>L'équipe Eco-Paluds</p>`;
+
         await sendMail(newUser.email, subject, text, html);
-        console.log('✅ Mail de bienvenue envoyé à', newUser.email);
+        console.log('✅ Email de confirmation envoyé à', newUser.email);
       } catch (mailErr) {
-        console.error('❌ Échec envoi mail bienvenue:', mailErr);
+        console.error('❌ Échec envoi email confirmation:', mailErr);
       }
     })();
 
@@ -179,6 +205,186 @@ exports.register = async (req, res) => {
     res.status(500).json({
       error: error.message,
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+};
+
+exports.confirmEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token de confirmation manquant' });
+    }
+
+    // Vérifier et décoder le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded.userId || !decoded.email) {
+      return res.status(400).json({ error: 'Token invalide' });
+    }
+
+    // Vérifier que l'utilisateur existe
+    const user = await prisma.user.findUnique({
+      where: { id_user: decoded.userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier que l'email correspond
+    if (user.email !== decoded.email) {
+      return res.status(400).json({ error: 'Token ne correspond pas à l\'email' });
+    }
+
+    // Vérifier si l'email est déjà confirmé
+    if (user.confirmEmail) {
+      return res.status(200).json({
+        message: 'Email déjà confirmé',
+        user: {
+          id: user.id_user,
+          email: user.email,
+          confirmEmail: user.confirmEmail
+        }
+      });
+    }
+
+    // Mettre à jour confirmEmail à true
+    const updatedUser = await prisma.user.update({
+      where: { id_user: decoded.userId },
+      data: { confirmEmail: true },
+      select: {
+        id_user: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        confirmEmail: true
+      }
+    });
+
+    console.log('✅ Email confirmé pour utilisateur:', updatedUser.email);
+
+    return res.status(200).json({
+      message: 'Email confirmé avec succès ! Vous pouvez maintenant vous connecter.',
+      user: {
+        id: updatedUser.id_user,
+        firstName: updatedUser.first_name,
+        lastName: updatedUser.last_name,
+        email: updatedUser.email,
+        confirmEmail: updatedUser.confirmEmail
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erreur confirmation email:', error);
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({
+        error: 'Token expiré',
+        message: 'Le lien de confirmation a expiré. Veuillez vous réinscrire.'
+      });
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({
+        error: 'Token invalide',
+        message: 'Le lien de confirmation est invalide.'
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Erreur interne du serveur',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+exports.confirmEmailPost = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token de confirmation manquant' });
+    }
+
+    // Vérifier et décoder le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded.userId || !decoded.email) {
+      return res.status(400).json({ error: 'Token invalide' });
+    }
+
+    // Vérifier que l'utilisateur existe
+    const user = await prisma.user.findUnique({
+      where: { id_user: decoded.userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier que l'email correspond
+    if (user.email !== decoded.email) {
+      return res.status(400).json({ error: 'Token ne correspond pas à l\'email' });
+    }
+
+    // Vérifier si l'email est déjà confirmé
+    if (user.confirmEmail) {
+      return res.status(200).json({
+        message: 'Email déjà confirmé',
+        user: {
+          id: user.id_user,
+          email: user.email,
+          confirmEmail: user.confirmEmail
+        }
+      });
+    }
+
+    // Mettre à jour confirmEmail à true
+    const updatedUser = await prisma.user.update({
+      where: { id_user: decoded.userId },
+      data: { confirmEmail: true },
+      select: {
+        id_user: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        confirmEmail: true
+      }
+    });
+
+    console.log('✅ Email confirmé pour utilisateur:', updatedUser.email);
+
+    return res.status(200).json({
+      message: 'Email confirmé avec succès ! Vous pouvez maintenant vous connecter.',
+      user: {
+        id: updatedUser.id_user,
+        firstName: updatedUser.first_name,
+        lastName: updatedUser.last_name,
+        email: updatedUser.email,
+        confirmEmail: updatedUser.confirmEmail
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erreur confirmation email POST:', error);
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Token expiré',
+        message: 'Le lien de confirmation a expiré. Veuillez vous réinscrire.'
+      });
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({
+        error: 'Token invalide',
+        message: 'Le lien de confirmation est invalide.'
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Erreur interne du serveur',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -226,6 +432,7 @@ exports.postLogin = async (req, res) => {
 
     if (!user) {
       console.log("❌ Utilisateur non trouvé pour:", email);
+      console.warn(`🔐 Tentative de connexion échouée - Email non trouvé: ${email.trim().toLowerCase()} à ${new Date().toISOString()}`);
       return res.status(404).json({
         error: "Email ou mot de passe incorrect", // Message générique pour la sécurité
       });
@@ -237,6 +444,7 @@ exports.postLogin = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log("❌ Mot de passe incorrect pour:", email);
+      console.warn(`🔐 Tentative de connexion échouée - Mot de passe incorrect pour: ${email.trim().toLowerCase()} à ${new Date().toISOString()}`);
       return res.status(401).json({
         error: "Email ou mot de passe incorrect", // Message générique pour la sécurité
       });
@@ -299,8 +507,38 @@ exports.refresh = async (req, res) => {
     return res.status(403).json({ error: "Token invalide ou expiré" });
   }
 
-  const newAccessToken = generateAccessToken(stored.userId);
-  res.json({ accessToken: newAccessToken });
+  try {
+    // Supprimer l'ancien refresh token (rotation)
+    await prisma.refreshToken.delete({ where: { token } });
+
+    // Générer un nouveau refresh token
+    const newRefreshToken = generateRefreshToken();
+
+    // Sauvegarder le nouveau refresh token en base
+    await prisma.refreshToken.create({
+      data: {
+        token: newRefreshToken,
+        userId: stored.userId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+      },
+    });
+
+    // Définir le nouveau refresh token dans le cookie
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: false, // mettre true en prod avec HTTPS
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Générer un nouveau access token
+    const newAccessToken = generateAccessToken(stored.userId);
+
+    res.json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error("❌ Erreur lors de la rotation du refresh token:", error);
+    return res.status(500).json({ error: "Erreur interne du serveur" });
+  }
 };
 exports.logout = async (req, res) => {
   try {
