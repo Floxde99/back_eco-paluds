@@ -752,6 +752,25 @@ exports.uploadAvatar = async (req, res) => {
 
       const avatarUrl = `/avatars/${filename}`;
 
+      // Supprimer l'ancien avatar si il existe
+      const currentUser = await prisma.user.findUnique({
+        where: { id_user: userId },
+        select: { avatar_url: true }
+      });
+
+      if (currentUser && currentUser.avatar_url) {
+        const oldAvatarPath = path.join(__dirname, '..', 'public', currentUser.avatar_url);
+        try {
+          await fsPromises.unlink(oldAvatarPath);
+          console.log('✅ Ancien avatar supprimé lors de l\'upload:', oldAvatarPath);
+        } catch (fileErr) {
+          // Si le fichier n'existe pas, on continue silencieusement
+          if (fileErr.code !== 'ENOENT') {
+            console.warn('⚠️ Erreur suppression ancien avatar:', fileErr.message);
+          }
+        }
+      }
+
       // Update DB
       const updatedUser = await prisma.user.update({
         where: { id_user: userId },
@@ -779,6 +798,52 @@ exports.uploadAvatar = async (req, res) => {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Récupérer l'utilisateur actuel pour obtenir l'ancien avatar
+    const user = await prisma.user.findUnique({
+      where: { id_user: userId },
+      select: { avatar_url: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Si l'utilisateur n'a pas d'avatar, rien à supprimer
+    if (!user.avatar_url) {
+      return res.status(400).json({ error: 'Aucun avatar à supprimer' });
+    }
+
+    // Supprimer le fichier physique
+    const avatarPath = path.join(__dirname, '..', 'public', user.avatar_url);
+    try {
+      await fsPromises.unlink(avatarPath);
+      console.log('✅ Ancien avatar supprimé:', avatarPath);
+    } catch (fileErr) {
+      // Si le fichier n'existe pas, on continue silencieusement
+      if (fileErr.code !== 'ENOENT') {
+        console.warn('⚠️ Erreur suppression fichier avatar:', fileErr.message);
+      }
+    }
+
+    // Mettre à jour la base de données pour supprimer la référence
+    await prisma.user.update({
+      where: { id_user: userId },
+      data: { avatar_url: null }
+    });
+
+    return res.status(200).json({
+      message: 'Avatar supprimé avec succès'
+    });
+  } catch (error) {
+    console.error('❌ Erreur deleteAvatar:', error);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 };
@@ -892,6 +957,59 @@ exports.getCompanies = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Erreur getCompanies:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+};
+
+exports.getAvatar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Récupérer l'avatar de l'utilisateur depuis la base de données
+    const user = await prisma.user.findUnique({
+      where: { id_user: userId },
+      select: { avatar_url: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    if (!user.avatar_url) {
+      return res.status(404).json({ error: 'Aucun avatar trouvé pour cet utilisateur' });
+    }
+
+    // Construire le chemin absolu du fichier
+    const avatarPath = path.join(__dirname, '..', 'public', user.avatar_url);
+
+    // Vérifier que le fichier existe
+    try {
+      await fsPromises.access(avatarPath);
+    } catch (fileErr) {
+      console.warn('⚠️ Fichier avatar introuvable:', avatarPath);
+      return res.status(404).json({ error: 'Fichier avatar introuvable' });
+    }
+
+    // Servir le fichier avec les headers appropriés
+    res.setHeader('Content-Type', 'image/webp'); // Toujours WebP car on convertit
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache 1h
+    res.setHeader('Content-Disposition', 'inline'); // Afficher dans le navigateur
+
+    // Servir le fichier
+    res.sendFile(avatarPath, (err) => {
+      if (err) {
+        console.error('❌ Erreur envoi fichier avatar:', err);
+        // Ne pas envoyer de réponse si sendFile a déjà commencé
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Erreur lors de la récupération de l\'avatar' });
+        }
+      } else {
+        console.log('✅ Avatar servi pour utilisateur:', userId);
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur getAvatar:', error);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 };
