@@ -5,7 +5,6 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 const userRouter = require('./routers/userRouter');
-const contactRouter = require('./routers/contactRouter');
 const dashboardRouter = require('./routers/dashboardRouter');
 require('fs');
 
@@ -77,7 +76,6 @@ app.use('/login', loginLimiter);
 app.use('/user/avatar', uploadLimiter);
 
 app.use('/', userRouter);
-app.use('/contact', contactRouter); // Ajouter cette ligne
 app.use('/dashboard', dashboardRouter);
 
 app.listen(process.env.PORT, (err) => {
