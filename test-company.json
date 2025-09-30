@@ -1,0 +1,416 @@
+{
+  "info": {
+    "name": "Company Management API Tests",
+    "description": "Tests for company profile, productions, besoins, dechets, and geolocation endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Company Profile",
+      "item": [
+        {
+          "name": "Get Company Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/profile",
+              "host": ["{{base_url}}"],
+              "path": ["company", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Company General Info",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Entreprise Test\",\n  \"sector\": \"Industrie\",\n  \"description\": \"Description de l'entreprise\",\n  \"phone\": \"0123456789\",\n  \"email\": \"contact@entreprise.com\",\n  \"website\": \"https://entreprise.com\",\n  \"siret\": \"12345678901234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/general",
+              "host": ["{{base_url}}"],
+              "path": ["company", "general"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Productions",
+      "item": [
+        {
+          "name": "Get All Productions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/productions",
+              "host": ["{{base_url}}"],
+              "path": ["company", "productions"]
+            }
+          }
+        },
+        {
+          "name": "Add Production",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produit A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du produit\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/productions",
+              "host": ["{{base_url}}"],
+              "path": ["company", "productions"]
+            }
+          }
+        },
+        {
+          "name": "Update Production",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produit A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/productions/{{production_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "productions", "{{production_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Production",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/productions/{{production_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "productions", "{{production_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Besoins",
+      "item": [
+        {
+          "name": "Get All Besoins",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/besoins",
+              "host": ["{{base_url}}"],
+              "path": ["company", "besoins"]
+            }
+          }
+        },
+        {
+          "name": "Add Besoin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Besoin A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du besoin\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/besoins",
+              "host": ["{{base_url}}"],
+              "path": ["company", "besoins"]
+            }
+          }
+        },
+        {
+          "name": "Update Besoin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Besoin A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/besoins/{{besoin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "besoins", "{{besoin_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Besoin",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/besoins/{{besoin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "besoins", "{{besoin_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dechets",
+      "item": [
+        {
+          "name": "Get All Dechets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/dechets",
+              "host": ["{{base_url}}"],
+              "path": ["company", "dechets"]
+            }
+          }
+        },
+        {
+          "name": "Add Dechet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Déchet A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du déchet\",\n  \"is_been\": true,\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/dechets",
+              "host": ["{{base_url}}"],
+              "path": ["company", "dechets"]
+            }
+          }
+        },
+        {
+          "name": "Update Dechet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Déchet A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"is_been\": true,\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/dechets/{{dechet_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "dechets", "{{dechet_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Dechet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/dechets/{{dechet_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["company", "dechets", "{{dechet_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Geolocation",
+      "item": [
+        {
+          "name": "Get Geolocation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/company/geolocation",
+              "host": ["{{base_url}}"],
+              "path": ["company", "geolocation"]
+            }
+          }
+        },
+        {
+          "name": "Update Geolocation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"123 Rue de la Paix, 75001 Paris, France\",\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/company/geolocation",
+              "host": ["{{base_url}}"],
+              "path": ["company", "geolocation"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "auth_token",
+      "value": "your_jwt_token_here"
+    },
+    {
+      "key": "production_id",
+      "value": "1"
+    },
+    {
+      "key": "besoin_id",
+      "value": "1"
+    },
+    {
+      "key": "dechet_id",
+      "value": "1"
+    }
+  ]
+}

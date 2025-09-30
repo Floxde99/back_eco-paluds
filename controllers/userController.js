@@ -1,7 +1,6 @@
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
-const jwt = require('jsonwebtoken'); // ← AJOUT DE L'IMPORT MANQUANT
 const multer = require("multer");
 const path = require("path");
 const sharp = require('sharp');
@@ -10,6 +9,9 @@ const { z } = require('zod');
 const {
   generateAccessToken,
   generateRefreshToken,
+  hashRefreshToken,
+  signEmailToken,
+  verifyEmailToken
 } = require("../services/tokenUtils");
 const { sendMail } = require('../services/mailer');
 
@@ -126,11 +128,10 @@ exports.register = async (req, res) => {
     (async () => {
       try {
         // Générer un token de confirmation (valide 24h)
-        const confirmationToken = jwt.sign(
-          { userId: newUser.id_user, email: newUser.email },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
+        const confirmationToken = signEmailToken({
+          userId: newUser.id_user,
+          email: newUser.email
+        });
 
         // Créer le lien de confirmation (utilise maintenant POST)
         const confirmationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/confirm-email`;
@@ -218,7 +219,7 @@ exports.confirmEmail = async (req, res) => {
     }
 
     // Vérifier et décoder le token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyEmailToken(token);
 
     if (!decoded.userId || !decoded.email) {
       return res.status(400).json({ error: 'Token invalide' });
@@ -308,7 +309,7 @@ exports.confirmEmailPost = async (req, res) => {
     }
 
     // Vérifier et décoder le token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyEmailToken(token);
 
     if (!decoded.userId || !decoded.email) {
       return res.status(400).json({ error: 'Token invalide' });
@@ -457,9 +458,11 @@ exports.postLogin = async (req, res) => {
     });
     const accessToken = generateAccessToken(user.id_user);
     const refreshToken = generateRefreshToken();
+    const refreshTokenHash = hashRefreshToken(refreshToken);
+
     await prisma.refreshToken.create({
       data: {
-        token: refreshToken,
+        token: refreshTokenHash,
         userId: user.id_user,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
       },
@@ -467,7 +470,7 @@ exports.postLogin = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // mettre true en prod avec HTTPS
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -502,22 +505,30 @@ exports.refresh = async (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ error: "Pas de token" });
 
-  const stored = await prisma.refreshToken.findUnique({ where: { token } });
+  let hashedToken;
+  try {
+    hashedToken = hashRefreshToken(token);
+  } catch (error) {
+    return res.status(400).json({ error: "Token invalide" });
+  }
+
+  const stored = await prisma.refreshToken.findUnique({ where: { token: hashedToken } });
   if (!stored || stored.expiresAt < new Date()) {
     return res.status(403).json({ error: "Token invalide ou expiré" });
   }
 
   try {
     // Supprimer l'ancien refresh token (rotation)
-    await prisma.refreshToken.delete({ where: { token } });
+    await prisma.refreshToken.delete({ where: { token: hashedToken } });
 
     // Générer un nouveau refresh token
     const newRefreshToken = generateRefreshToken();
+    const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
 
     // Sauvegarder le nouveau refresh token en base
     await prisma.refreshToken.create({
       data: {
-        token: newRefreshToken,
+        token: newRefreshTokenHash,
         userId: stored.userId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
       },
@@ -526,7 +537,7 @@ exports.refresh = async (req, res) => {
     // Définir le nouveau refresh token dans le cookie
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: false, // mettre true en prod avec HTTPS
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -545,12 +556,17 @@ exports.logout = async (req, res) => {
     const token = (req.cookies && req.cookies.refreshToken) ? req.cookies.refreshToken : null;
 
     // Toujours effacer le cookie côté client
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'strict'
+    });
 
     // Si un token est présent, tenter de le supprimer en base (silencieux si introuvable)
     if (token) {
       try {
-        await prisma.refreshToken.deleteMany({ where: { token } });
+        const hashedToken = hashRefreshToken(token);
+        await prisma.refreshToken.deleteMany({ where: { token: hashedToken } });
       } catch (dbErr) {
         console.warn('Warn: erreur suppression refreshToken en DB (ignorée):', dbErr.message || dbErr);
       }
@@ -560,7 +576,13 @@ exports.logout = async (req, res) => {
   } catch (error) {
     console.error('❌ Erreur lors de la déconnexion:', error);
     // Idempotence : considérer la déconnexion comme réussie côté client
-    try { res.clearCookie('refreshToken'); } catch (e) {}
+    try {
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict'
+      });
+    } catch (e) {}
     return res.status(200).json({ message: 'Déconnexion réussie' });
   }
 };

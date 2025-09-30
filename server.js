@@ -6,6 +6,9 @@ const path = require('path');
 const app = express();
 const userRouter = require('./routers/userRouter');
 const dashboardRouter = require('./routers/dashboardRouter');
+const companyRouter = require('./routers/companyRouter');
+const billingRouter = require('./routers/billingRouter');
+const billingController = require('./controllers/billingController');
 require('fs');
 
 // Lire les origines CORS depuis .env (séparées par des virgules)
@@ -65,6 +68,8 @@ const uploadLimiter = rateLimit({
   // Le rate limiting sera basé sur l'IP par défaut
 });
 
+app.post('/billing/webhook', express.raw({ type: 'application/json' }), billingController.handleWebhook);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -77,6 +82,8 @@ app.use('/user/avatar', uploadLimiter);
 
 app.use('/', userRouter);
 app.use('/dashboard', dashboardRouter);
+app.use('/company', companyRouter);
+app.use('/billing', billingRouter);
 
 app.listen(process.env.PORT, (err) => {
     if (err) {

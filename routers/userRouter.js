@@ -7,9 +7,6 @@ router.post('/addUser', userController.register);
 router.get('/confirm-email/:token', userController.confirmEmail);
 router.post('/confirm-email', userController.confirmEmailPost);
 router.post('/login', userController.postLogin);
-// Allow logout even when access token is missing/expired so clients can always
-// clear local state and the server can attempt to revoke refresh tokens
-// idempotently. authGuard removed intentionally.
 router.post("/logout", userController.logout);
 
 router.get('/user/profile', authGuard, userController.getProfile);

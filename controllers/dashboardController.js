@@ -52,7 +52,7 @@ exports.getStats = async (req, res) => {
       prisma.subscription.findFirst({
         where: { 
           user_id: userId,
-          status: 'active'
+          status: { in: ['active', 'trialing'] }
         },
         orderBy: { start_date: 'desc' }
       })
@@ -105,9 +105,17 @@ exports.getStats = async (req, res) => {
       subscription: userSubscription ? {
         type: userSubscription.subscription_type,
         status: userSubscription.status,
+        price: userSubscription.price,
+        currency: userSubscription.currency,
+        billingCycle: userSubscription.billing_cycle,
+        startDate: userSubscription.start_date,
         endDate: userSubscription.end_date,
+        currentPeriodStart: userSubscription.current_period_start,
+        currentPeriodEnd: userSubscription.current_period_end,
+        cancelAtPeriodEnd: userSubscription.cancel_at_period_end,
         aiConsumption: userSubscription.ai_consumption,
-        billingThreshold: userSubscription.billing_threshold
+        billingThreshold: userSubscription.billing_threshold,
+        paymentMethod: userSubscription.payment_method
       } : null
     });
   } catch (error) {

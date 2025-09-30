@@ -119,17 +119,26 @@ model Role {
 
 
 model Subscription {
-  id_subscription     Int      @id @default(autoincrement())
-  stripe_id           String   @unique
-  subscription_type   String
-  start_date          DateTime
-  end_date            DateTime?
-  price               Float
-  status              String
-  ai_consumption      Int      @default(0)
-  billing_threshold   Float
-  user_id             Int
-  user                User     @relation(fields: [user_id], references: [id_user])
+  id_subscription       Int      @id @default(autoincrement())
+  stripe_id             String   @unique
+  stripe_customer_id    String?
+  subscription_type     String
+  plan_id               String?
+  billing_cycle         String?
+  start_date            DateTime
+  end_date              DateTime?
+  current_period_start  DateTime?
+  current_period_end    DateTime?
+  cancel_at_period_end  Boolean  @default(false)
+  price                 Float
+  currency              String   @default("eur")
+  status                String
+  ai_consumption        Int      @default(0)
+  billing_threshold     Float
+  payment_method        String?
+  metadata              Json?
+  user_id               Int
+  user                  User     @relation(fields: [user_id], references: [id_user])
 }
 
 
@@ -169,6 +178,7 @@ model User {
   password        String
   phone           String?
   avatar_url      String?   // ← AJOUTER UNIQUEMENT CETTE LIGNE
+  stripe_customer_id String?
   confirmEmail    Boolean   @default(false)
   roleId          Int?
   roleObj         Role?   @relation(fields: [roleId], references: [id_role])

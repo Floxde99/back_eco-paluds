@@ -1,18 +1,28 @@
-const jwt = require('jsonwebtoken');
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
+const { verifyAccessToken } = require('./tokenUtils');
 
 module.exports = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Token requis' });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded || (typeof decoded.userId !== 'number' && typeof decoded.userId !== 'string')) {
+      return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const userId = Number(decoded.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    req.user = { ...decoded, userId };
 
     // Vérifier que l'utilisateur existe et que son email est confirmé
     const user = await prisma.user.findUnique({
-      where: { id_user: decoded.userId },
+      where: { id_user: userId },
       select: { confirmEmail: true, email: true }
     });
 
