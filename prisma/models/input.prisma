@@ -13,4 +13,5 @@ model Input {
   family_id     Int?
   family        Family?  @relation(fields: [family_id], references: [id_family])
   flows         Flow[]
+  @@map("inputs")
 }

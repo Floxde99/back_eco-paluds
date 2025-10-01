@@ -8,4 +8,5 @@ model Partner {
   contact       String
   status        String
   transports    Transport[]
+  @@map("partners")
 }

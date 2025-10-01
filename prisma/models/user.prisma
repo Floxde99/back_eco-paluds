@@ -15,4 +15,5 @@ model User {
   companies       Company[]
   subscriptions   Subscription[]
   tokens          RefreshToken[]
+  @@map("users")
 }

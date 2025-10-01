@@ -19,4 +19,5 @@ model Subscription {
   metadata              Json?
   user_id               Int
   user                  User     @relation(fields: [user_id], references: [id_user])
+  @@map("subscriptions")
 }

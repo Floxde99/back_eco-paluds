@@ -4,4 +4,5 @@ model Flow {
   input     Input  @relation(fields: [input_id], references: [id_input])
   output    Output @relation(fields: [output_id], references: [id_output])
   @@id([input_id, output_id])
+  @@map("flows")
 }

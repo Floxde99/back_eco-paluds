@@ -5,4 +5,5 @@ model RefreshToken {
   userId     Int
   createdAt  DateTime @default(now())
   expiresAt  DateTime
+  @@map("refresh_tokens")
 }

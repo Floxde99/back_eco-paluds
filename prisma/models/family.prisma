@@ -3,4 +3,5 @@ model Family {
   name      String
   inputs    Input[]
   outputs   Output[]
+  @@map("families")
 }

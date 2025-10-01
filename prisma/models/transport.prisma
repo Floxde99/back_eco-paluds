@@ -7,4 +7,5 @@ model Transport {
   comments         String?
   partner_id       Int
   partner          Partner  @relation(fields: [partner_id], references: [partner_id])
+  @@map("transports")
 }

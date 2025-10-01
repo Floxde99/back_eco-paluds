@@ -2,4 +2,5 @@ model Role {
   id_role Int    @id @default(autoincrement())
   name    String
   users   User[]
+  @@map("roles")
 }

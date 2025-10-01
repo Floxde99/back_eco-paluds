@@ -32,6 +32,7 @@ model Company {
   companyTypes      CompanyType[]
   inputs            Input[]
   outputs           Output[]
+  @@map("companies")
 }
 
 
@@ -41,6 +42,7 @@ model CompanyType {
   company    Company @relation(fields: [company_id], references: [id_company])
   type       Type    @relation(fields: [type_id], references: [id_type])
   @@id([company_id, type_id])
+  @@map("company_types")
 }
 
 
@@ -49,6 +51,7 @@ model Family {
   name      String
   inputs    Input[]
   outputs   Output[]
+  @@map("families")
 }
 
 
@@ -58,6 +61,7 @@ model Flow {
   input     Input  @relation(fields: [input_id], references: [id_input])
   output    Output @relation(fields: [output_id], references: [id_output])
   @@id([input_id, output_id])
+  @@map("flows")
 }
 
 
@@ -76,6 +80,7 @@ model Input {
   family_id     Int?
   family        Family?  @relation(fields: [family_id], references: [id_family])
   flows         Flow[]
+  @@map("inputs")
 }
 
 
@@ -95,6 +100,7 @@ model Output {
   family_id     Int?
   family        Family?  @relation(fields: [family_id], references: [id_family])
   flows         Flow[]
+  @@map("outputs")
 }
 
 
@@ -108,6 +114,7 @@ model Partner {
   contact       String
   status        String
   transports    Transport[]
+  @@map("partners")
 }
 
 
@@ -115,6 +122,7 @@ model Role {
   id_role Int    @id @default(autoincrement())
   name    String
   users   User[]
+  @@map("roles")
 }
 
 
@@ -139,6 +147,7 @@ model Subscription {
   metadata              Json?
   user_id               Int
   user                  User     @relation(fields: [user_id], references: [id_user])
+  @@map("subscriptions")
 }
 
 
@@ -149,6 +158,7 @@ model RefreshToken {
   userId     Int
   createdAt  DateTime @default(now())
   expiresAt  DateTime
+  @@map("refresh_tokens")
 }
 
 model Transport {
@@ -160,6 +170,7 @@ model Transport {
   comments         String?
   partner_id       Int
   partner          Partner  @relation(fields: [partner_id], references: [partner_id])
+  @@map("transports")
 }
 
 
@@ -167,6 +178,7 @@ model Type {
   id_type   Int    @id @default(autoincrement())
   name      String
   companyTypes CompanyType[]
+  @@map("types")
 }
 
 
@@ -187,4 +199,5 @@ model User {
   companies       Company[]
   subscriptions   Subscription[]
   tokens          RefreshToken[]
+  @@map("users")
 }

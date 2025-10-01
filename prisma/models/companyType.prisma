@@ -4,4 +4,5 @@ model CompanyType {
   company    Company @relation(fields: [company_id], references: [id_company])
   type       Type    @relation(fields: [type_id], references: [id_type])
   @@id([company_id, type_id])
+  @@map("company_types")
 }
