@@ -15,5 +15,9 @@ model User {
   companies       Company[]
   subscriptions   Subscription[]
   tokens          RefreshToken[]
+  suggestionInteractions SuggestionInteraction[]
+  importFiles     ImportFile[]
+  importAnalyses  ImportAnalysis[]
+  importHistory   ImportHistory[]
   @@map("users")
 }

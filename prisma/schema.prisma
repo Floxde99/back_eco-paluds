@@ -32,6 +32,7 @@ model Company {
   companyTypes      CompanyType[]
   inputs            Input[]
   outputs           Output[]
+  suggestionInteractions SuggestionInteraction[]
   @@map("companies")
 }
 
@@ -62,6 +63,71 @@ model Flow {
   output    Output @relation(fields: [output_id], references: [id_output])
   @@id([input_id, output_id])
   @@map("flows")
+}
+
+
+model ImportAnalysis {
+  id_import_analysis Int      @id @default(autoincrement())
+  file_id            Int
+  user_id            Int
+  status             String   @default("PENDING") @db.VarChar(50)
+  predictions        Json?
+  partnerships       Json?
+  optimizations      Json?
+  financial_impact   Json?
+  precision_score    Decimal? @db.Decimal(5, 2)
+  processing_time_ms Int?
+  rows_processed     Int?
+  errors             Json?
+  source_data        Json?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  file               ImportFile @relation(fields: [file_id], references: [id_import_file])
+  user               User       @relation(fields: [user_id], references: [id_user])
+  history            ImportHistory[]
+
+  @@map("import_analyses")
+}
+
+
+model ImportFile {
+  id_import_file  Int      @id @default(autoincrement())
+  user_id         Int
+  file_name       String   @db.VarChar(255)
+  file_size       Int
+  file_type       String   @db.VarChar(50)
+  file_path       String   @db.Text
+  status          String   @default("UPLOADED") @db.VarChar(50)
+  metadata        Json?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User             @relation(fields: [user_id], references: [id_user])
+  analyses        ImportAnalysis[]
+  history         ImportHistory[]
+
+  @@map("import_files")
+}
+
+
+model ImportHistory {
+  id_import_history Int       @id @default(autoincrement())
+  file_id           Int
+  analysis_id       Int?
+  user_id           Int
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  status            String    @db.VarChar(50)
+  synced_to_profile Boolean   @default(false)
+  synced_at         DateTime?
+  created_at        DateTime  @default(now())
+
+  file              ImportFile      @relation(fields: [file_id], references: [id_import_file])
+  analysis          ImportAnalysis? @relation(fields: [analysis_id], references: [id_import_analysis])
+  user              User            @relation(fields: [user_id], references: [id_user])
+
+  @@map("import_history")
 }
 
 
@@ -151,6 +217,26 @@ model Subscription {
 }
 
 
+model SuggestionInteraction {
+  id_suggestion        Int      @id @default(autoincrement())
+  user_id              Int
+  target_company_id    Int
+  status               String   @default("new")
+  last_score           Int?
+  distance_km          Float?
+  reasons              Json?
+  metadata             Json?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  user                 User     @relation(fields: [user_id], references: [id_user])
+  targetCompany        Company  @relation(fields: [target_company_id], references: [id_company])
+
+  @@unique([user_id, target_company_id])
+  @@map("suggestion_interactions")
+}
+
+
 model RefreshToken {
   id         Int      @id @default(autoincrement())
   token      String   @unique
@@ -199,5 +285,9 @@ model User {
   companies       Company[]
   subscriptions   Subscription[]
   tokens          RefreshToken[]
+  suggestionInteractions SuggestionInteraction[]
+  importFiles     ImportFile[]
+  importAnalyses  ImportAnalysis[]
+  importHistory   ImportHistory[]
   @@map("users")
 }

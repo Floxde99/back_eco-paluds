@@ -1,0 +1,18 @@
+model ImportHistory {
+  id_import_history Int       @id @default(autoincrement())
+  file_id           Int
+  analysis_id       Int?
+  user_id           Int
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  status            String    @db.VarChar(50)
+  synced_to_profile Boolean   @default(false)
+  synced_at         DateTime?
+  created_at        DateTime  @default(now())
+
+  file              ImportFile      @relation(fields: [file_id], references: [id_import_file])
+  analysis          ImportAnalysis? @relation(fields: [analysis_id], references: [id_import_analysis])
+  user              User            @relation(fields: [user_id], references: [id_user])
+
+  @@map("import_history")
+}

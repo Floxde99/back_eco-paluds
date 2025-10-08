@@ -1,0 +1,11 @@
+﻿Type,Nom,Quantité,Unité,Fréquence,État
+Déchet,Cartons d'emballage,800,kg,Mensuel,Propre
+Déchet,Chutes plastiques,300,kg,Mensuel,Propre
+Déchet,Chutes de métal,450,kg,Mensuel,Propre
+Production,Composants électroniques,1200,unités,Hebdomadaire,Fini
+Production,Pièces plastiques injectées,2400,unités,Mensuel,Fini
+Besoin,Résine ABS,1800,kg,Mensuel,Brut
+Besoin,Acier inoxydable,1000,kg,Mensuel,Brut
+Besoin,Cartons de conditionnement,400,kg,Mensuel,Brut
+Déchet,Papiers de bureau,100,kg,Trimestriel,Propre
+Déchet,Films plastiques d'emballage,200,kg,Mensuel,Propre

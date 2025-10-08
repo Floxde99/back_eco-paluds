@@ -1,0 +1,23 @@
+model ImportAnalysis {
+  id_import_analysis Int      @id @default(autoincrement())
+  file_id            Int
+  user_id            Int
+  status             String   @default("PENDING") @db.VarChar(50)
+  predictions        Json?
+  partnerships       Json?
+  optimizations      Json?
+  financial_impact   Json?
+  precision_score    Decimal? @db.Decimal(5, 2)
+  processing_time_ms Int?
+  rows_processed     Int?
+  errors             Json?
+  source_data        Json?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  file               ImportFile @relation(fields: [file_id], references: [id_import_file])
+  user               User       @relation(fields: [user_id], references: [id_user])
+  history            ImportHistory[]
+
+  @@map("import_analyses")
+}

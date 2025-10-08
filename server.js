@@ -8,6 +8,8 @@ const userRouter = require('./routers/userRouter');
 const dashboardRouter = require('./routers/dashboardRouter');
 const companyRouter = require('./routers/companyRouter');
 const billingRouter = require('./routers/billingRouter');
+const suggestionRouter = require('./routers/suggestionRouter');
+const importRouter = require('./routers/importRouter');
 const billingController = require('./controllers/billingController');
 require('fs');
 
@@ -79,11 +81,14 @@ app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
 // Appliquer les rate limiters aux routes spécifiques
 app.use('/login', loginLimiter);
 app.use('/user/avatar', uploadLimiter);
+app.use('/import/upload', uploadLimiter);
 
 app.use('/', userRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/company', companyRouter);
 app.use('/billing', billingRouter);
+app.use('/suggestions', suggestionRouter);
+app.use('/import', importRouter);
 
 app.listen(process.env.PORT, (err) => {
     if (err) {

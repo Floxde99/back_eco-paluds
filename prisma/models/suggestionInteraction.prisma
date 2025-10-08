@@ -1,0 +1,18 @@
+model SuggestionInteraction {
+  id_suggestion        Int      @id @default(autoincrement())
+  user_id              Int
+  target_company_id    Int
+  status               String   @default("new")
+  last_score           Int?
+  distance_km          Float?
+  reasons              Json?
+  metadata             Json?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  user                 User     @relation(fields: [user_id], references: [id_user])
+  targetCompany        Company  @relation(fields: [target_company_id], references: [id_company])
+
+  @@unique([user_id, target_company_id])
+  @@map("suggestion_interactions")
+}

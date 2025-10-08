@@ -27,6 +27,12 @@ npm test
 - `GET /billing/subscription` – état d'abonnement de l'utilisateur connecté
 - `POST /billing/payment-intents` – création d'un PaymentIntent Stripe pour un plan
 - `POST /billing/paypal/session` – (placeholder) indique que PayPal n'est pas encore configuré
+- `GET /suggestions` – liste des suggestions personnalisées + stats résumées
+- `GET /suggestions/stats` – statistiques détaillées (compatibilité, engagement)
+- `GET /suggestions/filters` – options de filtrage disponibles côté front
+- `POST /suggestions/:id/ignore` – marquer une suggestion comme ignorée
+- `POST /suggestions/:id/save` – sauvegarder une suggestion pour plus tard
+- `POST /suggestions/:id/contact` – indiquer qu'un contact a été initié
 
 ## 🔐 Auth
 JWT en Header `Authorization: Bearer <token>` via `authGuard`. Refresh token en cookie HTTP-only (rotation 7 j).
@@ -66,6 +72,14 @@ Script `scripts/seed-companies.js` pour injecter des entreprises locales factice
 ```pwsh
 node scripts/seed-companies.js
 ```
+
+## 🤝 Suggestions intelligentes
+
+- Matching bidirectionnel productions ↔ besoins ↔ déchets (famille, catégorie, nom)
+- Score sur 100 réparti : ressources (40 pts), proximité (30), unités/volumes (20), complémentarité sectorielle (10)
+- Raisons dynamiques générées en fonction des correspondances (ressource, distance, secteur)
+- Historique stocké dans `suggestion_interactions` avec statuts (`new`, `saved`, `ignored`, `contacted`)
+- Filtres renvoyés côté API : statut, compatibilité, distance, secteurs, tags
 
 ## 💳 Configuration facturation
 

@@ -1,0 +1,18 @@
+model ImportFile {
+  id_import_file  Int      @id @default(autoincrement())
+  user_id         Int
+  file_name       String   @db.VarChar(255)
+  file_size       Int
+  file_type       String   @db.VarChar(50)
+  file_path       String   @db.Text
+  status          String   @default("UPLOADED") @db.VarChar(50)
+  metadata        Json?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User             @relation(fields: [user_id], references: [id_user])
+  analyses        ImportAnalysis[]
+  history         ImportHistory[]
+
+  @@map("import_files")
+}
