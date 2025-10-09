@@ -1,0 +1,18 @@
+model AssistantConversation {
+  id_assistant_conversation Int                    @id @default(autoincrement())
+  user_id                   Int
+  title                     String?                @db.VarChar(255)
+  status                    String                 @default("OPEN") @db.VarChar(30)
+  last_event_at             DateTime               @default(now())
+  metadata                  Json?
+  created_at                DateTime               @default(now())
+  updated_at                DateTime               @updatedAt
+
+  user                      User                   @relation(fields: [user_id], references: [id_user])
+  messages                  AssistantMessage[]
+  escalations               AssistantEscalation[]
+  telemetry                 AssistantTelemetry[]
+
+  @@index([user_id, last_event_at])
+  @@map("assistant_conversations")
+}

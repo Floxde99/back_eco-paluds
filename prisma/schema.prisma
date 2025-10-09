@@ -12,6 +12,90 @@ datasource db {
 }
 
 
+model AssistantConversation {
+  id_assistant_conversation Int                    @id @default(autoincrement())
+  user_id                   Int
+  title                     String?                @db.VarChar(255)
+  status                    String                 @default("OPEN") @db.VarChar(30)
+  last_event_at             DateTime               @default(now())
+  metadata                  Json?
+  created_at                DateTime               @default(now())
+  updated_at                DateTime               @updatedAt
+
+  user                      User                   @relation(fields: [user_id], references: [id_user])
+  messages                  AssistantMessage[]
+  escalations               AssistantEscalation[]
+  telemetry                 AssistantTelemetry[]
+
+  @@index([user_id, last_event_at])
+  @@map("assistant_conversations")
+}
+
+
+model AssistantEscalation {
+  id_assistant_escalation Int                   @id @default(autoincrement())
+  conversation_id         Int
+  user_id                 Int
+  status                  String               @default("PENDING") @db.VarChar(30)
+  subject                 String               @db.VarChar(255)
+  description             String?              @db.Text
+  transcript              Json?
+  ticket_reference        String?              @db.VarChar(255)
+  metadata                Json?
+  created_at              DateTime             @default(now())
+  updated_at              DateTime             @updatedAt
+
+  conversation            AssistantConversation @relation(fields: [conversation_id], references: [id_assistant_conversation])
+  user                    User                 @relation(fields: [user_id], references: [id_user])
+
+  @@index([conversation_id, created_at])
+  @@map("assistant_escalations")
+}
+
+
+model AssistantMessage {
+  id_assistant_message Int                    @id @default(autoincrement())
+  conversation_id      Int
+  user_id              Int?
+  role                 String                 @db.VarChar(30)
+  status               String                 @default("QUEUED") @db.VarChar(30)
+  text                 String?                @db.Text
+  content              Json?
+  tokens_in            Int?                   @default(0)
+  tokens_out           Int?                   @default(0)
+  error                String?                @db.Text
+  metadata             Json?
+  created_at           DateTime               @default(now())
+  updated_at           DateTime               @updatedAt
+
+  conversation         AssistantConversation  @relation(fields: [conversation_id], references: [id_assistant_conversation])
+  user                 User?                  @relation(fields: [user_id], references: [id_user])
+  telemetry            AssistantTelemetry[]
+
+  @@index([conversation_id, created_at])
+  @@map("assistant_messages")
+}
+
+
+model AssistantTelemetry {
+  id_assistant_telemetry Int                   @id @default(autoincrement())
+  conversation_id        Int
+  message_id             Int?
+  user_id                Int
+  event_type             String               @db.VarChar(50)
+  label                  String?              @db.VarChar(255)
+  data                   Json?
+  created_at             DateTime             @default(now())
+
+  conversation           AssistantConversation @relation(fields: [conversation_id], references: [id_assistant_conversation])
+  message                AssistantMessage?    @relation(fields: [message_id], references: [id_assistant_message])
+  user                   User                 @relation(fields: [user_id], references: [id_user])
+
+  @@index([conversation_id, created_at])
+  @@map("assistant_telemetry")
+}
+
+
 model Company {
   id_company        Int      @id @default(autoincrement())
   name              String
@@ -289,5 +373,9 @@ model User {
   importFiles     ImportFile[]
   importAnalyses  ImportAnalysis[]
   importHistory   ImportHistory[]
+  assistantConversations AssistantConversation[]
+  assistantMessages      AssistantMessage[]
+  assistantEscalations   AssistantEscalation[]
+  assistantTelemetry     AssistantTelemetry[]
   @@map("users")
 }

@@ -19,5 +19,9 @@ model User {
   importFiles     ImportFile[]
   importAnalyses  ImportAnalysis[]
   importHistory   ImportHistory[]
+  assistantConversations AssistantConversation[]
+  assistantMessages      AssistantMessage[]
+  assistantEscalations   AssistantEscalation[]
+  assistantTelemetry     AssistantTelemetry[]
   @@map("users")
 }

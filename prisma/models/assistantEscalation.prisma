@@ -1,0 +1,19 @@
+model AssistantEscalation {
+  id_assistant_escalation Int                   @id @default(autoincrement())
+  conversation_id         Int
+  user_id                 Int
+  status                  String               @default("PENDING") @db.VarChar(30)
+  subject                 String               @db.VarChar(255)
+  description             String?              @db.Text
+  transcript              Json?
+  ticket_reference        String?              @db.VarChar(255)
+  metadata                Json?
+  created_at              DateTime             @default(now())
+  updated_at              DateTime             @updatedAt
+
+  conversation            AssistantConversation @relation(fields: [conversation_id], references: [id_assistant_conversation])
+  user                    User                 @relation(fields: [user_id], references: [id_user])
+
+  @@index([conversation_id, created_at])
+  @@map("assistant_escalations")
+}

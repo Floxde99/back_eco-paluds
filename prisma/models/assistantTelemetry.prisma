@@ -1,0 +1,17 @@
+model AssistantTelemetry {
+  id_assistant_telemetry Int                   @id @default(autoincrement())
+  conversation_id        Int
+  message_id             Int?
+  user_id                Int
+  event_type             String               @db.VarChar(50)
+  label                  String?              @db.VarChar(255)
+  data                   Json?
+  created_at             DateTime             @default(now())
+
+  conversation           AssistantConversation @relation(fields: [conversation_id], references: [id_assistant_conversation])
+  message                AssistantMessage?    @relation(fields: [message_id], references: [id_assistant_message])
+  user                   User                 @relation(fields: [user_id], references: [id_user])
+
+  @@index([conversation_id, created_at])
+  @@map("assistant_telemetry")
+}

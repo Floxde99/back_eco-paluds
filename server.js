@@ -10,6 +10,7 @@ const companyRouter = require('./routers/companyRouter');
 const billingRouter = require('./routers/billingRouter');
 const suggestionRouter = require('./routers/suggestionRouter');
 const importRouter = require('./routers/importRouter');
+const assistantRouter = require('./routers/assistantRouter');
 const billingController = require('./controllers/billingController');
 require('fs');
 
@@ -89,6 +90,7 @@ app.use('/company', companyRouter);
 app.use('/billing', billingRouter);
 app.use('/suggestions', suggestionRouter);
 app.use('/import', importRouter);
+app.use('/assistant', assistantRouter);
 
 app.listen(process.env.PORT, (err) => {
     if (err) {
