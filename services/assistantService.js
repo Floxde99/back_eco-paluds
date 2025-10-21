@@ -191,20 +191,6 @@ async function fetchContext(userId) {
     }
   });
 
-  const partnerCatalogPromise = prisma.partner.findMany({
-    take: 5,
-    orderBy: { partner_id: 'desc' },
-    select: {
-      partner_id: true,
-      name: true,
-      service_type: true,
-      coverage_area: true,
-      capacity: true,
-      rate: true,
-      status: true
-    }
-  });
-
   const familyCatalogPromise = prisma.family.findMany({
     take: 5,
     orderBy: { id_family: 'asc' },
@@ -216,8 +202,6 @@ async function fetchContext(userId) {
 
   const platformSnapshotPromise = prisma.$transaction([
     prisma.company.count(),
-    prisma.partner.count(),
-    prisma.transport.count(),
     prisma.importAnalysis.count(),
     prisma.suggestionInteraction.count({ where: { status: { in: ['accepted', 'in_discussion', 'converted'] } } })
   ]);
@@ -236,7 +220,6 @@ async function fetchContext(userId) {
     recentOutputs,
     suggestions,
     subscription,
-    partnerCatalog,
     familyCatalog,
     platformSnapshot,
     usageCounts
@@ -246,15 +229,14 @@ async function fetchContext(userId) {
     recentOutputsPromise,
     suggestionInteractionsPromise,
     subscriptionPromise,
-    partnerCatalogPromise,
     familyCatalogPromise,
     platformSnapshotPromise,
     usageCountsPromise
   ]);
 
   const [inputCount, outputCount, analysisCount] = usageCounts || [0, 0, 0];
-  const [companyCount, partnerCount, transportCount, analysisTotalCount, suggestionEngagementCount] =
-    platformSnapshot || [0, 0, 0, 0, 0];
+  const [companyCount, analysisTotalCount, suggestionEngagementCount] =
+    platformSnapshot || [0, 0, 0];
 
   return {
     company,
@@ -263,12 +245,9 @@ async function fetchContext(userId) {
     outputs: recentOutputs,
     suggestions,
     subscription,
-    partnerCatalog,
     familyCatalog,
     platform: {
       companies: companyCount,
-      partners: partnerCount,
-      transports: transportCount,
       analyses: analysisTotalCount,
       suggestionEngagements: suggestionEngagementCount
     },
@@ -355,7 +334,7 @@ function buildSystemPrompt(context, conversation) {
 
   if (context.platform) {
     lines.push(
-      `Panorama plateforme Paluds → ${context.platform.companies} entreprises connectées, ${context.platform.partners} partenaires référencés, ${context.platform.transports} transports planifiés, ${context.platform.analyses} analyses traitées, ${context.platform.suggestionEngagements} interactions partenaires engagées.`
+      `Panorama plateforme Paluds → ${context.platform.companies} entreprises connectées, ${context.platform.analyses} analyses traitées, ${context.platform.suggestionEngagements} interactions partenaires engagées.`
     );
   }
 
@@ -421,18 +400,6 @@ function buildSystemPrompt(context, conversation) {
     });
   } else {
     lines.push("Aucune suggestion partenaire consultée : propose d'activer les recommandations ou de contacter l'équipe animation.");
-  }
-
-  if (context.partnerCatalog?.length) {
-    lines.push('Exemples de partenaires référencés (données publiques) :');
-    context.partnerCatalog.forEach((partner) => {
-      lines.push(
-        `- ${partner.name} — service ${partner.service_type || 'non précisé'}, zone ${partner.coverage_area || 'non précisée'}, capacité ${partner.capacity ?? 'n/a'} unités, tarif indicatif ${
-          partner.rate ? `${partner.rate} €` : 'n/a'
-        }, statut ${partner.status || 'non précisé'}.`
-      );
-    });
-    lines.push("Ne divulgue jamais de coordonnées directes si elles ne sont pas fournies ; oriente vers le module Partenaires pour les détails.");
   }
 
   if (context.familyCatalog?.length) {

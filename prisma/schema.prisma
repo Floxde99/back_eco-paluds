@@ -117,9 +117,71 @@ model Company {
   inputs            Input[]
   outputs           Output[]
   suggestionInteractions SuggestionInteraction[]
+  contacts          CompanyContact[]
+  conversations     CompanyConversation[]
+  companyMessages   CompanyMessage[]
   @@map("companies")
 }
 
+
+model CompanyContact {
+  id_company_contact Int      @id @default(autoincrement())
+  user_id            Int
+  company_id         Int
+  status             String   @default("active") @db.VarChar(30)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  user       User    @relation(fields: [user_id], references: [id_user])
+  company    Company @relation(fields: [company_id], references: [id_company])
+  conversations CompanyConversation[]
+
+  @@unique([user_id, company_id])
+  @@map("company_contacts")
+}
+
+model CompanyConversation {
+  id_company_conversation Int      @id @default(autoincrement())
+  contact_id              Int
+  user_id                 Int
+  company_id              Int
+  status                  String   @default("active") @db.VarChar(30)
+  last_message_at         DateTime?
+  last_message_preview    String?  @db.VarChar(255)
+  unread_count            Int      @default(0)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  contact CompanyContact @relation(fields: [contact_id], references: [id_company_contact])
+  user    User           @relation(fields: [user_id], references: [id_user])
+  company Company        @relation(fields: [company_id], references: [id_company])
+  messages CompanyMessage[]
+
+  @@unique([user_id, company_id])
+  @@map("company_conversations")
+}
+
+model CompanyMessage {
+  id_company_message Int      @id @default(autoincrement())
+  conversation_id    Int
+  company_id         Int
+  sender_id          Int
+  recipient_id       Int?
+  body               String   @db.Text
+  attachments        Json?
+  status             String   @default("sent") @db.VarChar(30)
+  trace_id           String   @db.VarChar(64)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  conversation CompanyConversation @relation(fields: [conversation_id], references: [id_company_conversation])
+  company      Company             @relation(fields: [company_id], references: [id_company])
+  sender       User                @relation("CompanyMessageSender", fields: [sender_id], references: [id_user])
+  recipient    User?               @relation("CompanyMessageRecipient", fields: [recipient_id], references: [id_user])
+
+  @@index([conversation_id, created_at])
+  @@map("company_messages")
+}
 
 model CompanyType {
   company_id Int
@@ -254,20 +316,6 @@ model Output {
 }
 
 
-model Partner {
-  partner_id    Int         @id @default(autoincrement())
-  name          String
-  service_type  String
-  coverage_area String
-  capacity      Int
-  rate          Float
-  contact       String
-  status        String
-  transports    Transport[]
-  @@map("partners")
-}
-
-
 model Role {
   id_role Int    @id @default(autoincrement())
   name    String
@@ -331,19 +379,6 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-model Transport {
-  transport_id     Int      @id @default(autoincrement())
-  collection_date  DateTime
-  status           String
-  cost             Float
-  distance         Float
-  comments         String?
-  partner_id       Int
-  partner          Partner  @relation(fields: [partner_id], references: [partner_id])
-  @@map("transports")
-}
-
-
 model Type {
   id_type   Int    @id @default(autoincrement())
   name      String
@@ -377,5 +412,9 @@ model User {
   assistantMessages      AssistantMessage[]
   assistantEscalations   AssistantEscalation[]
   assistantTelemetry     AssistantTelemetry[]
+  companyContacts        CompanyContact[]
+  companyConversations   CompanyConversation[]
+  sentCompanyMessages    CompanyMessage[]      @relation("CompanyMessageSender")
+  receivedCompanyMessages CompanyMessage[]     @relation("CompanyMessageRecipient")
   @@map("users")
 }

@@ -1,0 +1,20 @@
+model CompanyConversation {
+  id_company_conversation Int      @id @default(autoincrement())
+  contact_id              Int
+  user_id                 Int
+  company_id              Int
+  status                  String   @default("active") @db.VarChar(30)
+  last_message_at         DateTime?
+  last_message_preview    String?  @db.VarChar(255)
+  unread_count            Int      @default(0)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  contact CompanyContact @relation(fields: [contact_id], references: [id_company_contact])
+  user    User           @relation(fields: [user_id], references: [id_user])
+  company Company        @relation(fields: [company_id], references: [id_company])
+  messages CompanyMessage[]
+
+  @@unique([user_id, company_id])
+  @@map("company_conversations")
+}
