@@ -5,5 +5,5 @@ package-lock.json
 /generated/prisma
 
 # Uploaded files
-public/avatars/
-public/imports/
+public/avatars/*
+public/imports/*
