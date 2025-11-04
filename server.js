@@ -3,7 +3,9 @@ const helmet = require('helmet');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const app = express();
+app.set('trust proxy', 1);
 const userRouter = require('./routers/userRouter');
 const dashboardRouter = require('./routers/dashboardRouter');
 const companyRouter = require('./routers/companyRouter');
@@ -12,6 +14,7 @@ const suggestionRouter = require('./routers/suggestionRouter');
 const importRouter = require('./routers/importRouter');
 const assistantRouter = require('./routers/assistantRouter');
 const contactsRouter = require('./routers/contactsRouter');
+const adminRouter = require('./routers/adminRouter');
 const billingController = require('./controllers/billingController');
 require('fs');
 
@@ -76,6 +79,7 @@ app.post('/billing/webhook', express.raw({ type: 'application/json' }), billingC
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Servir les fichiers statiques (avatars)
 app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
@@ -87,12 +91,13 @@ app.use('/import/upload', uploadLimiter);
 
 app.use('/', userRouter);
 app.use('/dashboard', dashboardRouter);
-app.use('/company', companyRouter);
+app.use('/companies', companyRouter);
 app.use('/billing', billingRouter);
 app.use('/suggestions', suggestionRouter);
 app.use('/import', importRouter);
 app.use('/assistant', assistantRouter);
 app.use('/contacts', contactsRouter);
+app.use('/admin', adminRouter);
 
 app.listen(process.env.PORT, (err) => {
     if (err) {

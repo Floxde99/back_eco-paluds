@@ -1,11 +1,18 @@
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
 const { z } = require('zod');
+const {
+  normalizeArrayParam,
+  parseNumberParam,
+  parseIntegerParam
+} = require('../lib/params');
+const { haversineDistance } = require('../lib/geo');
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 50;
 const DIRECTORY_CACHE_TTL_MS = 60 * 1000; // 1 minute
+const DIRECTORY_CACHE_MAX_ENTRIES = 200;
 const DIRECTORY_ALLOWED_STATUSES = ['validated', 'approved', 'pending', 'active'];
 const DEFAULT_REFERENCE_COORDINATES = {
   latitude: 43.2965,
@@ -14,61 +21,13 @@ const DEFAULT_REFERENCE_COORDINATES = {
 
 const searchCache = new Map();
 
+const companyIdParamSchema = z.object({
+  companyId: z.coerce.number().int().positive()
+});
+
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
-const normalizeArrayParam = (value) => {
-  if (value === undefined || value === null) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .flatMap(item => String(item).split(','))
-      .map(item => item.trim())
-      .filter(Boolean);
-  }
-
-  return String(value)
-    .split(',')
-    .map(item => item.trim())
-    .filter(Boolean);
-};
-
-const parseNumberParam = (value) => {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-  const num = Number(value);
-  return Number.isFinite(num) ? num : undefined;
-};
-
-const parseIntegerParam = (value) => {
-  const num = parseNumberParam(value);
-  if (num === undefined) {
-    return undefined;
-  }
-  return Number.isInteger(num) ? num : undefined;
-};
-
-const haversineDistance = (lat1, lon1, lat2, lon2) => {
-  if (
-    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' || typeof lon2 !== 'number'
-  ) {
-    return null;
-  }
-
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const R = 6371; // Radius of Earth in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+ 
 
 const trimDescription = (value, maxLength = 220) => {
   if (!value) {
@@ -111,6 +70,13 @@ const setCachedSearch = (key, payload) => {
     timestamp: Date.now(),
     payload: deepClone(payload)
   });
+
+  if (searchCache.size > DIRECTORY_CACHE_MAX_ENTRIES) {
+    const oldestKey = searchCache.keys().next().value;
+    if (oldestKey) {
+      searchCache.delete(oldestKey);
+    }
+  }
 };
 
 const invalidateDirectoryCache = () => {
@@ -188,10 +154,10 @@ const searchQuerySchema = z.object({
     });
   }
 
-  if ((data.sort === 'distance' || data.maxDistance !== undefined) && (data.userLat === undefined || data.userLng === undefined)) {
+  if (data.sort === 'distance' && (data.userLat === undefined || data.userLng === undefined)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Les coordonnées utilisateur sont requises pour le tri par distance ou le filtrage par distance',
+      message: 'Les coordonnées utilisateur sont requises pour le tri par distance',
       path: ['sort']
     });
   }
@@ -1440,13 +1406,8 @@ const parseSearchParams = (req) => {
 
   let maxDistanceRaw = parseNumberParam(query.maxDistance);
 
-  if ((normalizedSort === 'distance' || (maxDistanceRaw !== undefined && maxDistanceRaw > 0)) && (userLatRaw === undefined || userLngRaw === undefined)) {
-    if (normalizedSort === 'distance') {
-      normalizedSort = undefined;
-    }
-    if (maxDistanceRaw !== undefined) {
-      maxDistanceRaw = undefined;
-    }
+  if (normalizedSort === 'distance' && (userLatRaw === undefined || userLngRaw === undefined)) {
+    normalizedSort = undefined;
   }
 
   const parsed = searchQuerySchema.parse({
@@ -1571,11 +1532,15 @@ exports.getCompanyFilters = async (req, res) => {
 
 exports.getCompanyDetail = async (req, res) => {
   try {
-    const companyId = Number.parseInt(req.params.companyId || req.params.id, 10);
+    const parsedParams = companyIdParamSchema.safeParse({
+      companyId: req.params.companyId ?? req.params.id
+    });
 
-    if (Number.isNaN(companyId)) {
-      throw new HttpError(400, 'Identifiant d\'entreprise invalide');
+    if (!parsedParams.success) {
+      throw new HttpError(400, 'Identifiant d\'entreprise invalide', parsedParams.error.issues);
     }
+
+    const companyId = parsedParams.data.companyId;
 
     const company = await prisma.company.findUnique({
       where: { id_company: companyId },

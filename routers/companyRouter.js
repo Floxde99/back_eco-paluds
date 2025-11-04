@@ -22,10 +22,8 @@ router.use(authGuard);
 // DIRECTORY SEARCH & DETAIL
 // ===================
 
-router.get('/companies/filters', searchLimiter, companyController.getCompanyFilters);
-
-router.get('/companies', searchLimiter, companyController.searchCompanies);
-router.get('/companies/:companyId', companyController.getCompanyDetail);
+router.get('/filters', searchLimiter, companyController.getCompanyFilters);
+router.get('/', searchLimiter, companyController.searchCompanies);
 
 // ===================
 // COMPANY CREATION & PROFILE

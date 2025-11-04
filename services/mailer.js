@@ -1,14 +1,13 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-console.log('🔍 Mailer starting with ENV:', {
-  MAIL_HOST: process.env.MAIL_HOST,
-  MAIL_PORT: process.env.MAIL_PORT
-});
-
-// Forcer les valeurs (éviter localhost)
+// Forcer les valeurs (eviter localhost)
 const hostValue = process.env.MAIL_HOST || 'ssl0.ovh.net';
 const portValue = parseInt(process.env.MAIL_PORT || '465', 10);
+
+if (process.env.NODE_ENV !== 'production') {
+  console.log(`?? Mailer configure sur ${hostValue}:${portValue}`);
+}
 
 const transporter = nodemailer.createTransport({
   host: hostValue,
@@ -22,9 +21,9 @@ const transporter = nodemailer.createTransport({
 
 // Verify transporter at startup
 transporter.verify().then(() => {
-  console.log('✅ Mailer transporter ready');
-}).catch(err => {
-  console.warn('⚠️ Mailer transporter verification failed:', err.message || err);
+  console.log('? Mailer transporter ready');
+}).catch((err) => {
+  console.warn('?? Mailer transporter verification failed:', err.message || err);
 });
 
 function sendMail(to, subject, text, html) {
@@ -36,13 +35,14 @@ function sendMail(to, subject, text, html) {
     html,
   };
 
-  return transporter.sendMail(mailOptions).then(info => {
-    console.log('✅ Email envoyé :', info && info.response);
+  return transporter.sendMail(mailOptions).then((info) => {
+    console.log('? Email envoye :', info && info.response);
     return info;
-  }).catch(error => {
-    console.error('❌ Erreur envoi email :', error);
+  }).catch((error) => {
+    console.error('? Erreur envoi email :', error);
     throw error;
   });
 }
 
 module.exports = { sendMail };
+

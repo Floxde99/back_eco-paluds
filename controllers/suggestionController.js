@@ -1,6 +1,8 @@
 const { PrismaClient } = require('../generated/prisma/client');
 const prisma = new PrismaClient();
 const { z } = require('zod');
+const { normalizeArrayParam } = require('../lib/params');
+const { haversineDistance } = require('../lib/geo');
 
 const SCORE_WEIGHTS = {
   resource: 40,
@@ -41,39 +43,7 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 const toLower = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : null);
 
-const normalizeListParam = (value) => {
-  if (!value) return [];
-  if (Array.isArray(value)) {
-    return value
-      .flatMap((item) => String(item).split(','))
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return String(value)
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
-
-const haversineDistance = (lat1, lon1, lat2, lon2) => {
-  if (
-    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' || typeof lon2 !== 'number'
-  ) {
-    return null;
-  }
-
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+ 
 
 const classifyCompatibility = (score) => {
   if (score >= 85) {
@@ -663,7 +633,7 @@ exports.getSuggestions = async (req, res) => {
     }
 
     const filters = filtersRaw.data;
-    const tags = normalizeListParam(filters.tags);
+    const tags = normalizeArrayParam(filters.tags);
 
     const { company, suggestions } = await computeSuggestions(req.user.userId, { persist: true });
 

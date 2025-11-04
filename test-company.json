@@ -20,9 +20,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/profile",
+              "raw": "{{base_url}}/companies/profile",
               "host": ["{{base_url}}"],
-              "path": ["company", "profile"]
+              "path": ["companies", "profile"]
             }
           }
         },
@@ -47,9 +47,9 @@
               "raw": "{\n  \"name\": \"Entreprise Test\",\n  \"sector\": \"Industrie\",\n  \"description\": \"Description de l'entreprise\",\n  \"phone\": \"0123456789\",\n  \"email\": \"contact@entreprise.com\",\n  \"website\": \"https://entreprise.com\",\n  \"siret\": \"12345678901234\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/general",
+              "raw": "{{base_url}}/companies/general",
               "host": ["{{base_url}}"],
-              "path": ["company", "general"]
+              "path": ["companies", "general"]
             }
           }
         }
@@ -70,9 +70,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/productions",
+              "raw": "{{base_url}}/companies/productions",
               "host": ["{{base_url}}"],
-              "path": ["company", "productions"]
+              "path": ["companies", "productions"]
             }
           }
         },
@@ -97,9 +97,9 @@
               "raw": "{\n  \"name\": \"Produit A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du produit\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/productions",
+              "raw": "{{base_url}}/companies/productions",
               "host": ["{{base_url}}"],
-              "path": ["company", "productions"]
+              "path": ["companies", "productions"]
             }
           }
         },
@@ -124,9 +124,9 @@
               "raw": "{\n  \"name\": \"Produit A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/productions/{{production_id}}",
+              "raw": "{{base_url}}/companies/productions/{{production_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "productions", "{{production_id}}"]
+              "path": ["companies", "productions", "{{production_id}}"]
             }
           }
         },
@@ -142,9 +142,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/productions/{{production_id}}",
+              "raw": "{{base_url}}/companies/productions/{{production_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "productions", "{{production_id}}"]
+              "path": ["companies", "productions", "{{production_id}}"]
             }
           }
         }
@@ -165,9 +165,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/besoins",
+              "raw": "{{base_url}}/companies/besoins",
               "host": ["{{base_url}}"],
-              "path": ["company", "besoins"]
+              "path": ["companies", "besoins"]
             }
           }
         },
@@ -192,9 +192,9 @@
               "raw": "{\n  \"name\": \"Besoin A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du besoin\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/besoins",
+              "raw": "{{base_url}}/companies/besoins",
               "host": ["{{base_url}}"],
-              "path": ["company", "besoins"]
+              "path": ["companies", "besoins"]
             }
           }
         },
@@ -219,9 +219,9 @@
               "raw": "{\n  \"name\": \"Besoin A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/besoins/{{besoin_id}}",
+              "raw": "{{base_url}}/companies/besoins/{{besoin_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "besoins", "{{besoin_id}}"]
+              "path": ["companies", "besoins", "{{besoin_id}}"]
             }
           }
         },
@@ -237,9 +237,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/besoins/{{besoin_id}}",
+              "raw": "{{base_url}}/companies/besoins/{{besoin_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "besoins", "{{besoin_id}}"]
+              "path": ["companies", "besoins", "{{besoin_id}}"]
             }
           }
         }
@@ -260,9 +260,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/dechets",
+              "raw": "{{base_url}}/companies/dechets",
               "host": ["{{base_url}}"],
-              "path": ["company", "dechets"]
+              "path": ["companies", "dechets"]
             }
           }
         },
@@ -287,9 +287,9 @@
               "raw": "{\n  \"name\": \"Déchet A\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description du déchet\",\n  \"is_been\": true,\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/dechets",
+              "raw": "{{base_url}}/companies/dechets",
               "host": ["{{base_url}}"],
-              "path": ["company", "dechets"]
+              "path": ["companies", "dechets"]
             }
           }
         },
@@ -314,9 +314,9 @@
               "raw": "{\n  \"name\": \"Déchet A Modifié\",\n  \"category\": \"Catégorie 1\",\n  \"unit_measure\": \"kg\",\n  \"description\": \"Description modifiée\",\n  \"is_been\": true,\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/dechets/{{dechet_id}}",
+              "raw": "{{base_url}}/companies/dechets/{{dechet_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "dechets", "{{dechet_id}}"]
+              "path": ["companies", "dechets", "{{dechet_id}}"]
             }
           }
         },
@@ -332,9 +332,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/dechets/{{dechet_id}}",
+              "raw": "{{base_url}}/companies/dechets/{{dechet_id}}",
               "host": ["{{base_url}}"],
-              "path": ["company", "dechets", "{{dechet_id}}"]
+              "path": ["companies", "dechets", "{{dechet_id}}"]
             }
           }
         }
@@ -355,9 +355,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/company/geolocation",
+              "raw": "{{base_url}}/companies/geolocation",
               "host": ["{{base_url}}"],
-              "path": ["company", "geolocation"]
+              "path": ["companies", "geolocation"]
             }
           }
         },
@@ -382,9 +382,9 @@
               "raw": "{\n  \"address\": \"123 Rue de la Paix, 75001 Paris, France\",\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522\n}"
             },
             "url": {
-              "raw": "{{base_url}}/company/geolocation",
+              "raw": "{{base_url}}/companies/geolocation",
               "host": ["{{base_url}}"],
-              "path": ["company", "geolocation"]
+              "path": ["companies", "geolocation"]
             }
           }
         }

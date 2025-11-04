@@ -19,9 +19,9 @@
       "raw": "{\n  \"name\": \"Ma Super Entreprise\",\n  \"sector\": \"Agriculture\",\n  \"address\": \"123 Rue de la Paix, 75001 Paris\",\n  \"description\": \"Entreprise spécialisée dans l'agriculture durable\",\n  \"phone\": \"0123456789\",\n  \"email\": \"contact@masuperentreprise.com\",\n  \"website\": \"https://masuperentreprise.com\",\n  \"siret\": \"12345678901234\",\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522\n}"
     },
     "url": {
-      "raw": "{{base_url}}/company",
+      "raw": "{{base_url}}/companies",
       "host": ["{{base_url}}"],
-      "path": ["company"]
+      "path": ["companies"]
     }
   }
 }
