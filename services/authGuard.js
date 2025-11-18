@@ -4,6 +4,7 @@ const {
   generateRefreshToken,
   hashRefreshToken
 } = require('./tokenUtils');
+const { purgeExpiredRefreshTokens } = require('./refreshTokenMaintenance');
 const { PrismaClient } = require("../generated/prisma/client");
 const prisma = new PrismaClient();
 
@@ -69,6 +70,7 @@ module.exports = async (req, res, next) => {
     }
 
     try {
+      await purgeExpiredRefreshTokens(prisma);
       const hashedToken = hashRefreshToken(refreshTokenCookie);
       const stored = await prisma.refreshToken.findUnique({ where: { token: hashedToken } });
 
@@ -78,16 +80,15 @@ module.exports = async (req, res, next) => {
 
       const user = await getValidatedUser(stored.userId);
 
-      await prisma.refreshToken.delete({ where: { token: hashedToken } });
-
       const nextRefreshToken = generateRefreshToken();
       const nextRefreshTokenHash = hashRefreshToken(nextRefreshToken);
 
-      await prisma.refreshToken.create({
+      await prisma.refreshToken.update({
+        where: { token: hashedToken },
         data: {
           token: nextRefreshTokenHash,
-          userId: user.id_user,
-          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS)
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+          createdAt: new Date()
         }
       });
 

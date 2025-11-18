@@ -15,7 +15,7 @@ const searchLimiter = rateLimit({
   }
 });
 
-// Middleware d'authentification pour toutes les routes
+
 router.use(authGuard);
 
 // ===================

@@ -16,6 +16,7 @@ const assistantRouter = require('./routers/assistantRouter');
 const contactsRouter = require('./routers/contactsRouter');
 const adminRouter = require('./routers/adminRouter');
 const billingController = require('./controllers/billingController');
+const { startRefreshTokenCleanup } = require('./services/refreshTokenMaintenance');
 require('fs');
 
 // Lire les origines CORS depuis .env (séparées par des virgules)
@@ -54,6 +55,23 @@ app.use(cors({
     credentials: true
 }));
 
+const ACCESS_TOKEN_HEADER = 'x-access-token';
+app.use((req, res, next) => {
+  const existing = res.getHeader('Access-Control-Expose-Headers');
+  if (!existing) {
+    res.setHeader('Access-Control-Expose-Headers', ACCESS_TOKEN_HEADER);
+    return next();
+  }
+  const list = Array.isArray(existing)
+    ? existing
+    : existing.split(',').map(value => value.trim());
+  if (!list.map(value => value.toLowerCase()).includes(ACCESS_TOKEN_HEADER)) {
+    list.push(ACCESS_TOKEN_HEADER);
+    res.setHeader('Access-Control-Expose-Headers', list.join(', '));
+  }
+  return next();
+});
+
 // Rate limiting pour la sécurité
 const rateLimit = require('express-rate-limit');
 
@@ -75,7 +93,14 @@ const uploadLimiter = rateLimit({
   // Le rate limiting sera basé sur l'IP par défaut
 });
 
-app.post('/billing/webhook', express.raw({ type: 'application/json' }), billingController.handleWebhook);
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.post('/billing/webhook', webhookLimiter, express.raw({ type: 'application/json' }), billingController.handleWebhook);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -98,6 +123,8 @@ app.use('/import', importRouter);
 app.use('/assistant', assistantRouter);
 app.use('/contacts', contactsRouter);
 app.use('/admin', adminRouter);
+
+startRefreshTokenCleanup();
 
 app.listen(process.env.PORT, (err) => {
     if (err) {

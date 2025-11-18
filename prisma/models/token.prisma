@@ -3,7 +3,10 @@ model RefreshToken {
   token      String   @unique
   user       User     @relation(fields: [userId], references: [id_user])
   userId     Int
+  deviceId   String
   createdAt  DateTime @default(now())
   expiresAt  DateTime
+
+  @@unique([userId, deviceId])
   @@map("refresh_tokens")
 }

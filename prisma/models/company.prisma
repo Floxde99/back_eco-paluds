@@ -18,6 +18,9 @@ model Company {
   companyTypes      CompanyType[]
   inputs            Input[]
   outputs           Output[]
+  contacts          CompanyContact[]
+  conversations     CompanyConversation[]
+  messages          CompanyMessage[]
   suggestionInteractions SuggestionInteraction[]
   @@map("companies")
 }

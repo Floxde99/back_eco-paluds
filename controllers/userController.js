@@ -14,6 +14,9 @@ const {
   verifyEmailToken
 } = require("../services/tokenUtils");
 const { sendMail } = require('../services/mailer');
+const { purgeExpiredRefreshTokens } = require("../services/refreshTokenMaintenance");
+const { resolveDeviceId } = require("../services/deviceUtils");
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Schémas de validation Zod pour la sécurité
 const registerSchema = z.object({
@@ -456,15 +459,27 @@ exports.postLogin = async (req, res) => {
       where: { id_user: user.id_user },
       data: { last_connection: new Date() },
     });
+    await purgeExpiredRefreshTokens(prisma);
+
     const accessToken = generateAccessToken(user.id_user);
+
     const refreshToken = generateRefreshToken();
     const refreshTokenHash = hashRefreshToken(refreshToken);
+    const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    const deviceId = resolveDeviceId(req);
 
-    await prisma.refreshToken.create({
-      data: {
+    await prisma.refreshToken.upsert({
+      where: { userId_deviceId: { userId: user.id_user, deviceId } },
+      update: {
+        token: refreshTokenHash,
+        expiresAt: refreshTokenExpiry,
+        createdAt: new Date()
+      },
+      create: {
         token: refreshTokenHash,
         userId: user.id_user,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+        deviceId,
+        expiresAt: refreshTokenExpiry,
       },
     });
 
@@ -472,7 +487,7 @@ exports.postLogin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_TTL_MS,
     });
 
     // Retourner les informations de l'utilisateur (sans le mot de passe)
@@ -512,45 +527,42 @@ exports.refresh = async (req, res) => {
     return res.status(400).json({ error: "Token invalide" });
   }
 
+  await purgeExpiredRefreshTokens(prisma);
+
   const stored = await prisma.refreshToken.findUnique({ where: { token: hashedToken } });
   if (!stored || stored.expiresAt < new Date()) {
-    return res.status(403).json({ error: "Token invalide ou expiré" });
+    return res.status(403).json({ error: "Token invalide ou expire" });
   }
 
   try {
-    // Supprimer l'ancien refresh token (rotation)
-    await prisma.refreshToken.delete({ where: { token: hashedToken } });
-
-    // Générer un nouveau refresh token
     const newRefreshToken = generateRefreshToken();
     const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
 
-    // Sauvegarder le nouveau refresh token en base
-    await prisma.refreshToken.create({
+    await prisma.refreshToken.update({
+      where: { token: hashedToken },
       data: {
         token: newRefreshTokenHash,
-        userId: stored.userId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        createdAt: new Date(),
       },
     });
 
-    // Définir le nouveau refresh token dans le cookie
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_TTL_MS,
     });
 
-    // Générer un nouveau access token
     const newAccessToken = generateAccessToken(stored.userId);
 
     res.json({ accessToken: newAccessToken });
   } catch (error) {
-    console.error("❌ Erreur lors de la rotation du refresh token:", error);
+    console.error("? Erreur lors de la rotation du refresh token:", error);
     return res.status(500).json({ error: "Erreur interne du serveur" });
   }
 };
+
 exports.logout = async (req, res) => {
   try {
     const token = (req.cookies && req.cookies.refreshToken) ? req.cookies.refreshToken : null;
@@ -571,6 +583,8 @@ exports.logout = async (req, res) => {
         console.warn('Warn: erreur suppression refreshToken en DB (ignorée):', dbErr.message || dbErr);
       }
     }
+
+    await purgeExpiredRefreshTokens(prisma);
 
     return res.status(200).json({ message: 'Déconnexion réussie' });
   } catch (error) {

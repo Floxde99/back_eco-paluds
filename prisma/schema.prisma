@@ -116,10 +116,10 @@ model Company {
   companyTypes      CompanyType[]
   inputs            Input[]
   outputs           Output[]
-  suggestionInteractions SuggestionInteraction[]
   contacts          CompanyContact[]
   conversations     CompanyConversation[]
-  companyMessages   CompanyMessage[]
+  messages          CompanyMessage[]
+  suggestionInteractions SuggestionInteraction[]
   @@map("companies")
 }
 
@@ -374,10 +374,14 @@ model RefreshToken {
   token      String   @unique
   user       User     @relation(fields: [userId], references: [id_user])
   userId     Int
+  deviceId   String
   createdAt  DateTime @default(now())
   expiresAt  DateTime
+
+  @@unique([userId, deviceId])
   @@map("refresh_tokens")
 }
+
 
 model Type {
   id_type   Int    @id @default(autoincrement())

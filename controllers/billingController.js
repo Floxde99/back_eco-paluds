@@ -11,11 +11,18 @@ const metadataValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 const paymentIntentSchema = z.object({
   planId: z.string().min(1).optional(),
   priceId: z.string().min(1).optional(),
-  currency: z.string().optional(),
   metadata: z.record(metadataValueSchema).optional(),
   setupFutureUsage: z.enum(['on_session', 'off_session']).optional()
 }).refine(data => data.planId || data.priceId, {
   message: 'planId ou priceId est requis'
+}).superRefine((data, ctx) => {
+  if (data.priceId && !getPlanByPriceId(data.priceId)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['priceId'],
+      message: 'priceId inconnu'
+    });
+  }
 }).strip();
 
 function jsonError(res, status, message, extra = {}) {
@@ -68,11 +75,17 @@ function formatSubscription(subscription) {
   };
 }
 
+const formatCardLabel = (card) => {
+  if (!card || !card.last4) return null;
+  const brand = (card.brand || 'Carte').toUpperCase();
+  return `${brand} **** ${card.last4}`;
+};
+
 function getPaymentMethodLabel(defaultPaymentMethod) {
   if (!defaultPaymentMethod) return null;
   if (typeof defaultPaymentMethod === 'string') return defaultPaymentMethod;
   if (defaultPaymentMethod.card) {
-    return `${defaultPaymentMethod.card.brand} •••• ${defaultPaymentMethod.card.last4}`;
+    return formatCardLabel(defaultPaymentMethod.card);
   }
   return defaultPaymentMethod.type || null;
 }
@@ -83,20 +96,31 @@ function getPaymentIntentMethodLabel(paymentIntent) {
   const paymentMethod = paymentIntent.payment_method;
   if (paymentMethod && typeof paymentMethod === 'object') {
     if (paymentMethod.card) {
-      return `${paymentMethod.card.brand} •••• ${paymentMethod.card.last4}`;
+      return formatCardLabel(paymentMethod.card);
     }
     if (paymentMethod.type) {
       return paymentMethod.type;
     }
   }
 
-  const charge = paymentIntent.charges?.data?.find(Boolean);
+  const resolveCharge = () => {
+    if (!paymentIntent.charges?.data?.length) return null;
+    if (typeof paymentIntent.latest_charge === 'string') {
+      return paymentIntent.charges.data.find(charge => charge.id === paymentIntent.latest_charge) || paymentIntent.charges.data[0];
+    }
+    if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge === 'object') {
+      return paymentIntent.latest_charge;
+    }
+    return paymentIntent.charges.data[0];
+  };
+
+  const charge = resolveCharge();
   const cardDetails = charge?.payment_method_details?.card;
   if (cardDetails) {
-    return `${cardDetails.brand} •••• ${cardDetails.last4}`;
+    return formatCardLabel(cardDetails);
   }
 
-  return null;
+  return charge?.payment_method_details?.type || null;
 }
 
 function toDate(value) {
@@ -203,6 +227,11 @@ async function createOrUpdateSubscriptionFromPaymentIntent(paymentIntent, userId
   }).catch(() => null);
 
   const normalizedStatus = mapPaymentIntentStatus(paymentIntent.status);
+
+  if (existing && normalizedStatus === existing.status) {
+    return existing;
+  }
+
   const now = new Date();
   const startDate = existing?.start_date ?? now;
   const currentPeriodStart = normalizedStatus === 'active'
@@ -441,16 +470,16 @@ async function createPaymentIntentHandler(req, res) {
       return jsonError(res, 404, 'Utilisateur introuvable');
     }
 
-    let plan = null;
-    if (payload.planId) {
-      plan = getPlanById(payload.planId);
-    }
-    if (!plan && payload.priceId) {
-      plan = getPlanByPriceId(payload.priceId);
-    }
+    const planFromId = payload.planId ? getPlanById(payload.planId) : null;
+    const planFromPrice = payload.priceId ? getPlanByPriceId(payload.priceId) : null;
+    let plan = planFromId || planFromPrice;
 
     if (!plan) {
       return jsonError(res, 404, 'Offre introuvable');
+    }
+
+    if (payload.priceId && plan.stripePriceId && payload.priceId !== plan.stripePriceId) {
+      return jsonError(res, 400, 'priceId incompatible avec l’offre s�lectionn�e');
     }
 
     const metadata = {
@@ -462,7 +491,7 @@ async function createPaymentIntentHandler(req, res) {
     };
 
     const amount = Math.max(Math.round((plan.price || 0) * 100), 0);
-    const currency = (payload.currency || plan.currency || 'EUR').toLowerCase();
+    const currency = (plan.currency || 'EUR').toLowerCase();
 
     if (amount === 0) {
       const record = await createSubscriptionForFreePlan(user, plan, metadata);
@@ -474,16 +503,26 @@ async function createPaymentIntentHandler(req, res) {
 
     const stripeCustomerId = await ensureStripeCustomer(user);
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const stripePayload = {
       amount,
       currency,
       customer: stripeCustomerId,
       receipt_email: user.email || undefined,
       description: `Eco-Paluds - ${plan.name}`,
       metadata,
-      automatic_payment_methods: { enabled: true },
-      setup_future_usage: payload.setupFutureUsage
-    });
+      automatic_payment_methods: { enabled: true }
+    };
+
+    if (payload.setupFutureUsage) {
+      stripePayload.setup_future_usage = payload.setupFutureUsage;
+    }
+
+    const idempotencyKey = `pi_${user.id_user}_${plan.id}_${Date.now()}`;
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      stripePayload,
+      { idempotencyKey }
+    );
 
     await createOrUpdateSubscriptionFromPaymentIntent(paymentIntent, user.id_user, plan);
 
@@ -521,6 +560,11 @@ async function handleWebhookHandler(req, res) {
     return res.status(200).send('Stripe webhook disabled');
   }
 
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.includes('application/json')) {
+    return res.status(415).send('Unsupported content-type');
+  }
+
   const signature = req.headers['stripe-signature'];
 
   if (!signature) {
@@ -538,6 +582,14 @@ async function handleWebhookHandler(req, res) {
   try {
     const eventType = event.type;
     const dataObject = event.data.object;
+    const structuredLog = {
+      id: event.id,
+      type: eventType,
+      payment_intent: dataObject?.payment_intent || (eventType.startsWith('payment_intent') ? dataObject?.id : undefined),
+      customer: typeof dataObject?.customer === 'string' ? dataObject.customer : dataObject?.customer?.id,
+      userId: parseUserId(dataObject?.metadata?.userId)
+    };
+    console.log('[stripe.webhook]', JSON.stringify(structuredLog));
 
     switch (eventType) {
       case 'checkout.session.completed': {

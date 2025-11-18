@@ -23,5 +23,9 @@ model User {
   assistantMessages      AssistantMessage[]
   assistantEscalations   AssistantEscalation[]
   assistantTelemetry     AssistantTelemetry[]
+  companyContacts        CompanyContact[]
+  companyConversations   CompanyConversation[]
+  sentCompanyMessages    CompanyMessage[]      @relation("CompanyMessageSender")
+  receivedCompanyMessages CompanyMessage[]     @relation("CompanyMessageRecipient")
   @@map("users")
 }
