@@ -1,0 +1,89 @@
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-21 11:46:02"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-21 11:46:02"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-21 11:46:02"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-21 12:11:09"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-21 12:11:09"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-21 12:11:09"}
+{"corsOrigins":["http://localhost:4173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-21 12:13:16"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-21 12:13:17"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-21 12:13:17"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-23 10:17:53"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-23 10:17:53"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-23 10:17:53"}
+{"error":"\nInvalid `client.refreshToken.deleteMany()` invocation in\nC:\\Users\\flori\\Documents\\Projet final\\back\\services\\refreshTokenMaintenance.js:19:46\n\n  16 }\n  17 \n  18 try {\n→ 19   const result = await client.refreshToken.deleteMany(\nCan't reach database server at `localhost:3306`\n\nPlease make sure your database server is running at `localhost:3306`.","level":"error","message":"Failed to delete expired refresh tokens","service":"eco-paluds-backend","timestamp":"2025-11-23 10:17:58"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-23 10:20:41"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-23 10:20:41"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-23 10:20:41"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 10:41:54"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 10:41:54"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 10:41:54"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:30"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:30"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:30"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:36"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:36"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:01:36"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 11:21:07"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:21:07"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 11:21:07"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 12:06:13"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 12:06:13"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 12:06:13"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-11-26 12:15:38"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-11-26 12:15:38"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-11-26 12:15:38"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 09:54:56"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 09:54:56"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 09:54:56"}
+{"level":"info","message":"Deleted 1 expired refresh tokens","service":"eco-paluds-backend","timestamp":"2025-12-01 09:54:57"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:38"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:38"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:38"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:44"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:44"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:34:44"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:35:01"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:35:01"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:35:01"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:10"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:10"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:10"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:20"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:20"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:36:20"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:37:39"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:37:39"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:37:39"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:38:55"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:38:55"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:38:55"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:39:29"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:39:29"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:39:29"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:14"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:14"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:14"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:49"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:49"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:40:49"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 10:42:31"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:42:31"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 10:42:31"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:00:39"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:00:39"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:00:39"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:34"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:34"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:34"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:52"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:52"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:21:52"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:27:47"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:27:47"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:27:47"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:33:14"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:33:14"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:33:14"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}

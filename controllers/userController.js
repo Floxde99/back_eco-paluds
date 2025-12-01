@@ -1,5 +1,5 @@
-const { PrismaClient } = require("../generated/prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../services/prisma");
+const logger = require("../services/logger");
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const path = require("path");
@@ -16,14 +16,15 @@ const {
 const { sendMail } = require('../services/mailer');
 const { purgeExpiredRefreshTokens } = require("../services/refreshTokenMaintenance");
 const { resolveDeviceId } = require("../services/deviceUtils");
-const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const { TOKEN, VALIDATION } = require("../config/constants");
+const REFRESH_TOKEN_TTL_MS = TOKEN.REFRESH_TOKEN_TTL_MS;
 
 // Schémas de validation Zod pour la sécurité
 const registerSchema = z.object({
   firstName: z.string().min(1).max(50).trim(),
   lastName: z.string().min(1).max(50).trim(),
   email: z.string().email().toLowerCase().trim(),
-  password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/), // Au moins 8 chars, maj, min, chiffre
+  password: z.string().min(VALIDATION.PASSWORD_MIN_LENGTH).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
   confirmPassword: z.string(),
   phone: z.string().optional(),
   role: z.string().optional(),
@@ -41,18 +42,8 @@ exports.register = async (req, res) => {
     // Utiliser les données validées
     const { firstName, lastName, email, password, confirmPassword, phone, role } = validatedData;
 
-    console.log("🔍 Données normalisées:", {
-      firstName,
-      lastName,
-      email,
-      phone,
-      role,
-      passwordLength: password?.length,
-      confirmPasswordLength: confirmPassword?.length,
-    });
-
+    // Données validées, pas besoin de logger en détail
     // SUPPRESSION des logs de mots de passe pour la sécurité
-    // console.log("🔐 Validation mots de passe:", { ... });
 
     // Validation des champs requis
     if (!firstName || !lastName || !email || !password || !confirmPassword) {

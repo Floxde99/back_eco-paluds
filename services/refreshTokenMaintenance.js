@@ -1,5 +1,5 @@
-const { PrismaClient } = require('../generated/prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('./prisma');
+const logger = require('./logger');
 
 const DEFAULT_CLEANUP_INTERVAL_MS = parseInt(process.env.REFRESH_TOKEN_CLEANUP_INTERVAL_MS || '', 10)
   || 60 * 60 * 1000; // 1 hour
@@ -21,12 +21,12 @@ const purgeExpiredRefreshTokens = async (client = prisma) => {
     });
 
     if (result.count > 0) {
-      console.log(`[refreshTokenCleanup] Deleted ${result.count} expired refresh tokens.`);
+      logger.info(`Deleted ${result.count} expired refresh tokens`);
     }
 
     return result.count;
   } catch (error) {
-    console.error('[refreshTokenCleanup] Failed to delete expired refresh tokens:', error);
+    logger.error('Failed to delete expired refresh tokens', { error: error.message });
     return 0;
   }
 };

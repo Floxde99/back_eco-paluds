@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const logger = require('../services/logger');
 const {
   MessagingError,
   createContact,
@@ -78,7 +79,7 @@ const sendError = (res, error) => {
       details: error.details || null
     });
   }
-  console.error('❌ Messaging controller error:', error);
+  logger.error('Messaging controller error', { error: error.message });
   return res.status(500).json({
     success: false,
     error: 'Erreur interne du serveur'

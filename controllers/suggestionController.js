@@ -282,7 +282,13 @@ const applyFilters = (suggestions, filters) => {
       return false;
     }
 
-    if (filters.maxDistance !== undefined && suggestion.distanceKm !== null && suggestion.distanceKm > filters.maxDistance) {
+    const maxDistanceFilter = filters.maxDistance;
+    if (
+      maxDistanceFilter !== null &&
+      maxDistanceFilter !== undefined &&
+      suggestion.distanceKm !== null &&
+      suggestion.distanceKm > maxDistanceFilter
+    ) {
       return false;
     }
 
@@ -637,6 +643,17 @@ exports.getSuggestions = async (req, res) => {
 
     const { company, suggestions } = await computeSuggestions(req.user.userId, { persist: true });
 
+    console.log('🔍 DEBUG getSuggestions:');
+    console.log('  - Company:', company?.name);
+    console.log('  - Suggestions generated:', suggestions.length);
+    if (suggestions.length > 0) {
+      console.log('  - First suggestion:', {
+        company: suggestions[0].company.name,
+        status: suggestions[0].status,
+        score: suggestions[0].compatibility.score
+      });
+    }
+
     if (!company) {
       return res.status(404).json({
         error: 'Entreprise non trouvée',
@@ -653,10 +670,15 @@ exports.getSuggestions = async (req, res) => {
       tags
     };
 
+    console.log('  - Applied filters:', appliedFilters);
+
     const filtered = applyFilters(suggestions, { ...appliedFilters, tags });
+    console.log('  - After filtering:', filtered.length);
+    
     const sorted = sortSuggestions(filtered, filters.sort || 'score');
     const limit = filters.limit || DEFAULT_SUGGESTION_LIMIT;
     const limited = sorted.slice(0, limit);
+    console.log('  - After limit:', limited.length);
 
     const stats = buildStats(suggestions);
     const filtersPayload = buildFiltersPayload(suggestions);

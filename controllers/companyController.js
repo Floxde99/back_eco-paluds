@@ -21,6 +21,13 @@ const DEFAULT_REFERENCE_COORDINATES = {
 
 const searchCache = new Map();
 
+const normalizeString = (value) => {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  return String(value).trim().toLowerCase();
+};
+
 const companyIdParamSchema = z.object({
   companyId: z.coerce.number().int().positive()
 });
@@ -1373,9 +1380,27 @@ const buildDirectoryDataset = async (params) => {
 
   const transformed = companies.map(company => transformCompanyForDirectory(company, params));
 
-  const filtered = params.maxDistance
-    ? transformed.filter(company => company.distanceKm !== null && company.distanceKm <= params.maxDistance)
-    : transformed;
+  const sectorFilters = params.sectors.map(normalizeString).filter(Boolean);
+  const wasteFilters = params.wasteTypes.map(normalizeString).filter(Boolean);
+
+  const filtered = transformed.filter(company => {
+    const sectorValue = normalizeString(company.sector);
+    const wasteValues = (company.wasteTypes || []).map(normalizeString);
+
+    const sectorMatch = sectorFilters.length === 0
+      ? params.sectors.length === 0 // si aucun filtre fourni, tout passe
+      : sectorFilters.includes(sectorValue);
+    const wasteMatch =
+      wasteFilters.length === 0
+        ? params.wasteTypes.length === 0 // si aucun filtre fourni, tout passe
+        : wasteValues.some((waste) => wasteFilters.includes(waste));
+
+    const distanceMatch =
+      !params.maxDistance ||
+      (company.distanceKm !== null && company.distanceKm <= params.maxDistance);
+
+    return sectorMatch && wasteMatch && distanceMatch;
+  });
 
   const facets = collectFacets(filtered);
 

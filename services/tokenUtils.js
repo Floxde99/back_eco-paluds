@@ -7,23 +7,21 @@ try {
   throw error;
 }
 
-const resolveSecret = (primary, fallbackEnvKey) => {
-  const primaryValue = primary && primary.trim();
-  if (primaryValue) {
-    return primaryValue;
-  }
+// Validation stricte des secrets JWT - pas de fallback
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const EMAIL_SECRET = process.env.JWT_EMAIL_SECRET;
 
-  const fallback = process.env[fallbackEnvKey];
-  if (fallback && fallback.trim()) {
-    
-    return fallback.trim();
-  }
+if (!ACCESS_SECRET || !ACCESS_SECRET.trim()) {
+  throw new Error('JWT_ACCESS_SECRET doit être défini dans les variables d\'environnement');
+}
 
-  throw new Error(`Missing required JWT secret. Set ${fallbackEnvKey} or the dedicated secret in your environment.`);
-};
+if (!EMAIL_SECRET || !EMAIL_SECRET.trim()) {
+  throw new Error('JWT_EMAIL_SECRET doit être défini dans les variables d\'environnement');
+}
 
-const ACCESS_SECRET = resolveSecret(process.env.JWT_ACCESS_SECRET, 'JWT_SECRET');
-const EMAIL_SECRET = resolveSecret(process.env.JWT_EMAIL_SECRET, 'JWT_SECRET');
+if (ACCESS_SECRET === EMAIL_SECRET) {
+  throw new Error('JWT_ACCESS_SECRET et JWT_EMAIL_SECRET doivent être différents pour des raisons de sécurité');
+}
 
 const generateAccessToken = (userId, options = {}) => {
   if (!userId) throw new Error('generateAccessToken requires a userId');

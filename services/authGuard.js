@@ -5,8 +5,8 @@ const {
   hashRefreshToken
 } = require('./tokenUtils');
 const { purgeExpiredRefreshTokens } = require('./refreshTokenMaintenance');
-const { PrismaClient } = require("../generated/prisma/client");
-const prisma = new PrismaClient();
+const prisma = require('./prisma');
+const logger = require('./logger');
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -106,7 +106,7 @@ module.exports = async (req, res, next) => {
       req.user = { userId: user.id_user };
       return next();
     } catch (rotationErr) {
-      console.error('Échec de la rotation du token de rafraîchissement dans authGuard :', rotationErr);
+      logger.error('Échec de la rotation du token de rafraîchissement dans authGuard', { error: rotationErr.message });
       return res.status(401).json({ error: 'Session expirée' });
     }
   }

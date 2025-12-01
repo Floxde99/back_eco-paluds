@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const logger = require('./services/logger');
+const { RATE_LIMIT } = require('./config/constants');
 const app = express();
 app.set('trust proxy', 1);
 const userRouter = require('./routers/userRouter');
@@ -17,14 +19,13 @@ const contactsRouter = require('./routers/contactsRouter');
 const adminRouter = require('./routers/adminRouter');
 const billingController = require('./controllers/billingController');
 const { startRefreshTokenCleanup } = require('./services/refreshTokenMaintenance');
-require('fs');
 
 // Lire les origines CORS depuis .env (séparées par des virgules)
 const corsOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim()) 
   : ['http://localhost:5173']; // Fallback par défaut
 
-console.log('🔧 CORS Origins configurées:', corsOrigins);
+logger.info('CORS Origins configurées', { corsOrigins });
 
 // Configuration Helmet pour autoriser les images cross-origin tout en gardant la sécurité
 app.use(helmet({
@@ -75,27 +76,27 @@ app.use((req, res, next) => {
 // Rate limiting pour la sécurité
 const rateLimit = require('express-rate-limit');
 
-// Limiter les tentatives de connexion (5 par 15 min)
+// Limiter les tentatives de connexion
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentatives max
+  windowMs: RATE_LIMIT.LOGIN.WINDOW_MS,
+  max: RATE_LIMIT.LOGIN.MAX_ATTEMPTS,
   message: 'Trop de tentatives de connexion, réessayez plus tard.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Limiter les uploads (10 par heure par utilisateur)
+// Limiter les uploads
 const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 heure
-  max: 10,
+  windowMs: RATE_LIMIT.UPLOAD.WINDOW_MS,
+  max: RATE_LIMIT.UPLOAD.MAX_ATTEMPTS,
   message: 'Trop d\'uploads, réessayez plus tard.',
-  // Utiliser la configuration par défaut pour éviter les problèmes IPv6
-  // Le rate limiting sera basé sur l'IP par défaut
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 const webhookLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
+  windowMs: RATE_LIMIT.WEBHOOK.WINDOW_MS,
+  max: RATE_LIMIT.WEBHOOK.MAX_ATTEMPTS,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -126,15 +127,34 @@ app.use('/admin', adminRouter);
 
 startRefreshTokenCleanup();
 
+// Middleware global de gestion d'erreurs (doit être après toutes les routes)
+app.use((err, req, res, next) => {
+  logger.error('Erreur non gérée', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip
+  });
+
+  const status = err.status || 500;
+  res.status(status).json({
+    error: err.message || 'Erreur interne du serveur',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
 app.listen(process.env.PORT, (err) => {
     if (err) {
-        console.error(err);
+        logger.error('Erreur au démarrage du serveur', { error: err.message });
         return;
     } else {
-        console.log(`connecté sur le port ${process.env.PORT}`);
+        logger.info(`Serveur connecté sur le port ${process.env.PORT}`);
     }
 });
 
-console.log('cwd:', process.cwd());
-console.log('ENV check -> MAIL_HOST:', process.env.MAIL_HOST, 'MAIL_PORT:', process.env.MAIL_PORT, 'PORT:', process.env.PORT);
-console.log('tokenUtils exists:', require('fs').existsSync(__dirname + '/services/tokenUtils.js'));
+logger.info('Environnement de travail', {
+  cwd: process.cwd(),
+  nodeEnv: process.env.NODE_ENV || 'development',
+  port: process.env.PORT
+});

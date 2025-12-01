@@ -1,6 +1,6 @@
 // Controller for dashboard-related endpoints
-const { PrismaClient } = require("../generated/prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../services/prisma");
+const logger = require("../services/logger");
 
 exports.getStats = async (req, res) => {
   try {
@@ -119,7 +119,7 @@ exports.getStats = async (req, res) => {
       } : null
     });
   } catch (error) {
-    console.error('❌ Erreur getStats:', error);
+    logger.error('Erreur getStats', { error: error.message, userId: req.user.userId });
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 };

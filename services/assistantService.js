@@ -264,153 +264,42 @@ function buildSystemPrompt(context, conversation) {
     ? QUICK_ACTIONS.find((item) => item.id === conversation.metadata.quickActionId)
     : null;
 
+  const routesList = Object.entries(NAVIGATION_ROUTES)
+    .map(([key, path]) => `${key}: ${path}`)
+    .join(' | ');
+
   const lines = [
-    "Tu es l'assistant IA d'EcoConnect Paluds, la plateforme métier dédiée aux flux d'économie circulaire.",
-    'Réponds exclusivement en français, avec un ton expert mais accessible et orienté action.',
-    "Ton rôle est d'aider l'utilisateur à exploiter les modules de l'application : Analyses d'import, Gestion des intrants/extrants, Suggestions de partenaires, Suivi d'abonnement.",
-    'Structure toujours ta réponse en points numérotés (1., 2., 3., ...) et termine par un appel à l’action concret pointant vers un module ou une activité EcoConnect.',
-    'Quand tu manques de données, dis-le explicitement puis propose comment les collecter dans EcoConnect (ex. importer un fichier, compléter une fiche ressource, valider un partenaire).',
-    "Précise les hypothèses ou limites de chaque recommandation et invite à consulter les sections pertinentes de l'application.",
-    'Si une contrainte réglementaire ou locale peut impacter la recommandation, signale-la brièvement.'
+    "Tu es l'assistant IA d'EcoConnect Paluds (économie circulaire).",
+    'Réponds uniquement en français, ton expert mais concis, orienté action.',
+    "Ton rôle: guider l’utilisateur dans l’app (analyses d’import, intrants/extrants, suggestions de partenaires, abonnement, profil).",
+    `Routes disponibles pour tes boutons: ${routesList}. N’utilise que ces routes.`,
+    'Formate tes boutons/actions en puces : "- [Libellé](route:cleOuChemin) --- courte explication".',
+    'Structure attendue : 1) Synthèse brève 2) Recommandations numérotées 3) Section "Actions" avec 1-3 boutons formatés ci-dessus.',
+    'Si une donnée manque, dis-le puis propose comment la collecter dans EcoConnect (import, fiche intrant/extrant, profil, suggestion).',
+    'Signale contraintes/limites si nécessaire et reste factuel (ne pas inventer).'
   ];
 
   if (quickActionMetadata) {
-    lines.push(`Contexte Quick Action: ${quickActionMetadata.label}. Priorise des recommandations alignées avec cet objectif.`);
+    lines.push(`Priorité Quick Action: ${quickActionMetadata.label} (${quickActionMetadata.prompt}).`);
   }
 
-  lines.push('Routes disponibles pour orienter l’utilisateur (utilise `route:<clé>` dans les actions) :');
-  Object.entries(NAVIGATION_ROUTES).forEach(([key, path]) => {
-    lines.push(`- ${key} → ${path}`);
-  });
-
-  lines.push('Format attendu de la réponse :');
-  lines.push('1. Utilise des titres Markdown (`##`) pour séparer Synthèse, Analyses, Recommandations.');
-  lines.push('2. Détailles les actions prioritaires en liste numérotée (1., 2., 3., …) avec justification basée sur les données EcoConnect.');
-  lines.push('3. Les compléments ou conseils secondaires peuvent être en liste à puces.');
-  lines.push('4. Termine impérativement par une section `## Actions` contenant une puce par bouton au format `- [Nom du bouton](route:clé)` en t’assurant que la clé est listée ci-dessus.');
-  lines.push("5. Quand pertinent, ajoute une dernière phrase d'encouragement avant la section Actions.");
-
-  if (context.subscription) {
+  if (context?.subscription) {
     const sub = context.subscription;
     lines.push(
-      `Abonnement: ${sub.subscription_type || 'inconnu'} (${sub.status}). Consommation IA: ${sub.ai_consumption ?? 0} appels, seuil facturation: ${sub.billing_threshold ?? 'n/a'}.`
+      `Abonnement: ${sub.subscription_type || 'inconnu'} (${sub.status}). Conso IA: ${sub.ai_consumption ?? 0}, seuil facturation: ${sub.billing_threshold ?? 'n/a'}.`
     );
-    if (sub.current_period_end) {
-      lines.push(`Fin de période en cours: ${new Date(sub.current_period_end).toLocaleDateString('fr-FR')}.`);
-    }
-  } else {
-    lines.push("Aucun abonnement actif détecté : suggère si besoin de contacter l'équipe commerciale ou d'activer un plan adapté.");
   }
 
-  if (context.company) {
-    const location = extractLocation(context.company.address);
+  if (context?.company) {
+    const c = context.company;
+    const location = extractLocation(c.address);
     lines.push(
-      `Entreprise pilotée: ${context.company.name || 'Non renseignée'} (${context.company.sector || 'Secteur inconnu'}) — localisée ${location || 'localisation à compléter'}.`
+      `Entreprise: ${c.name || 'Non renseignée'} | secteur: ${c.sector || 'n/a'} | localisation: ${location || 'n/a'} | statut profil: ${c.validation_status || 'n/a'}.`
     );
-    if (context.company.validation_status) {
-      lines.push(`Statut de validation du profil: ${context.company.validation_status}.`);
-    }
-    if (context.company.description) {
-      lines.push(`Pitch entreprise: ${context.company.description.substring(0, 220)}${context.company.description.length > 220 ? '…' : ''}`);
-    }
-    if (context.company.website) {
-      lines.push(`Site web public: ${context.company.website}.`);
-    }
-    const types = context.company.companyTypes
-      ?.map((association) => association.type?.name)
-      .filter(Boolean);
-    if (types?.length) {
-      lines.push(`Typologies déclarées: ${types.join(', ')}.`);
-    }
-  } else {
-    lines.push("Aucune entreprise rattachée : encourage à compléter la fiche société pour personnaliser les conseils.");
-  }
-
-  if (context.usage) {
-    lines.push(
-      `Données disponibles dans EcoConnect → Intrants: ${context.usage.inputs}, Extrants: ${context.usage.outputs}, Analyses importées: ${context.usage.analyses}.`
-    );
-  }
-
-  if (context.platform) {
-    lines.push(
-      `Panorama plateforme Paluds → ${context.platform.companies} entreprises connectées, ${context.platform.analyses} analyses traitées, ${context.platform.suggestionEngagements} interactions partenaires engagées.`
-    );
-  }
-
-  if (context.inputs?.length) {
-    lines.push('Intrants récemment modifiés :');
-    context.inputs.forEach((input) => {
-      lines.push(
-        `- ${input.name} (${input.category || 'Catégorie inconnue'}) — statut ${input.status || 'n/a'}, unité ${input.unit_measure || 'n/a'}, mis à jour le ${input.last_update ? new Date(input.last_update).toLocaleDateString('fr-FR') : 'date inconnue'}.`
-      );
-    });
-  } else {
-    lines.push("Aucun intrant récent : propose d'enregistrer les matières entrantes pour nourrir les recommandations.");
-  }
-
-  if (context.outputs?.length) {
-    lines.push('Extrants récemment modifiés :');
-    context.outputs.forEach((output) => {
-      lines.push(
-        `- ${output.name} (${output.category || 'Catégorie inconnue'}) — statut ${output.status || 'n/a'}, unité ${output.unit_measure || 'n/a'}, mis à jour le ${output.last_update ? new Date(output.last_update).toLocaleDateString('fr-FR') : 'date inconnue'}.`
-      );
-    });
-  } else {
-    lines.push("Aucun extrant récent : incite à documenter les flux sortants pour faciliter les mises en relation.");
-  }
-
-  if (context.analyses?.length) {
-    lines.push('Analyses d’import récentes :');
-    context.analyses.forEach((analysis, index) => {
-      const precision = analysis.precision_score ? Number(analysis.precision_score) : 0;
-      const revenue = analysis.financial_impact
-        ? `${analysis.financial_impact.minRevenue || 0} à ${analysis.financial_impact.maxRevenue || 0} €`
-        : 'n/a';
-      const optimisationCount = Array.isArray(analysis.optimizations) ? analysis.optimizations.length : 0;
-      lines.push(
-        `- Analyse ${index + 1} (ID ${analysis.id_import_analysis}) — précision ${precision}%, potentiel ${revenue}, optimisations détectées: ${optimisationCount}.`
-      );
-    });
-  } else {
-    lines.push("Aucune analyse importée : recommande d'uploader un fichier flux pour déclencher des recommandations.");
-  }
-
-  if (context.suggestions?.length) {
-    lines.push('Suggestions partenaires suivies :');
-    context.suggestions.forEach((suggestion) => {
-      const distance = suggestion.distance_km ? `${suggestion.distance_km.toFixed(1)} km` : 'distance inconnue';
-      const reasons = Array.isArray(suggestion.reasons)
-        ? suggestion.reasons
-            .slice(0, 2)
-            .map((reason) => {
-              if (typeof reason === 'string') return reason;
-              if (reason && typeof reason === 'object') {
-                return reason.summary || reason.label || JSON.stringify(reason).substring(0, 80);
-              }
-              return String(reason);
-            })
-            .join(' | ')
-        : null;
-      lines.push(
-        `- Suggestion #${suggestion.id_suggestion} — statut ${suggestion.status}, score ${suggestion.last_score ?? 'n/a'}, ${distance}${
-          reasons ? `, motifs: ${reasons}` : ''
-        }.`
-      );
-    });
-  } else {
-    lines.push("Aucune suggestion partenaire consultée : propose d'activer les recommandations ou de contacter l'équipe animation.");
-  }
-
-  if (context.familyCatalog?.length) {
-    const familyList = context.familyCatalog.map((family) => family.name).filter(Boolean);
-    if (familyList.length) {
-      lines.push(`Familles de matières clés disponibles sur le site : ${familyList.join(', ')}.`);
+    if (c.description) {
+      lines.push(`Pitch: ${c.description.substring(0, 200)}${c.description.length > 200 ? '...' : ''}`);
     }
   }
-
-  lines.push('Ne jamais inventer de données qui ne figurent pas dans le contexte. Cite la source (Intrant, Extrant, Analyse, Suggestion, Abonnement) quand tu utilises une information.');
-  lines.push('Si l’utilisateur demande une fonctionnalité hors périmètre EcoConnect, redirige-le vers le support ou une alternative interne.');
 
   return lines.join('\n');
 }
