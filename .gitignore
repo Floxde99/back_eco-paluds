@@ -4,6 +4,7 @@ test_phone_front
 .env
 package-lock.json
 /generated/prisma
+logs
 
 # Uploaded files
 public/avatars/*

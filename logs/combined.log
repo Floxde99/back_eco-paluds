@@ -87,3 +87,10 @@
 {"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}
 {"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}
 {"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-01 11:34:39"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-06 20:18:59"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-06 20:18:59"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-06 20:18:59"}
+{"error":"\nInvalid `client.refreshToken.deleteMany()` invocation in\nC:\\Users\\flori\\Documents\\Projet final\\back\\services\\refreshTokenMaintenance.js:19:46\n\n  16 }\n  17 \n  18 try {\n→ 19   const result = await client.refreshToken.deleteMany(\nCan't reach database server at `localhost:3306`\n\nPlease make sure your database server is running at `localhost:3306`.","level":"error","message":"Failed to delete expired refresh tokens","service":"eco-paluds-backend","timestamp":"2025-12-06 20:19:08"}
+{"corsOrigins":["http://localhost:5173","http://192.168.1.24:8081"],"level":"info","message":"CORS Origins configurées","service":"eco-paluds-backend","timestamp":"2025-12-06 20:19:47"}
+{"cwd":"C:\\Users\\flori\\Documents\\Projet final\\back","level":"info","message":"Environnement de travail","nodeEnv":"development","port":"3069","service":"eco-paluds-backend","timestamp":"2025-12-06 20:19:47"}
+{"level":"info","message":"Serveur connecté sur le port 3069","service":"eco-paluds-backend","timestamp":"2025-12-06 20:19:47"}
