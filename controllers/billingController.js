@@ -48,7 +48,8 @@ function formatSubscription(subscription) {
     stripeCustomerId: subscription.stripe_customer_id,
     type: subscription.subscription_type,
     status: subscription.status,
-    planId: subscription.plan_id,
+    planId: subscription.subscription_type,
+    stripePriceId: subscription.plan_id,
     plan: plan ? {
       id: plan.id,
       name: plan.name,
@@ -554,6 +555,44 @@ async function createPaypalSessionHandler(req, res) {
   });
 }
 
+async function confirmPaymentHandler(req, res) {
+  if (!requireStripe(res)) return;
+
+  try {
+    const { paymentIntentId } = req.body || {};
+    const userId = req.user.userId;
+
+    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      return jsonError(res, 400, 'paymentIntentId requis');
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['payment_method']
+    });
+
+    if (!paymentIntent) {
+      return jsonError(res, 404, 'PaymentIntent introuvable');
+    }
+
+    const metaUserId = parseUserId(paymentIntent.metadata?.userId);
+    if (metaUserId && metaUserId !== userId) {
+      return jsonError(res, 403, 'Ce paiement ne vous appartient pas');
+    }
+
+    const plan = getPlanById(paymentIntent.metadata?.planId) || getPlanByPriceId(paymentIntent.metadata?.priceId);
+
+    const subscription = await createOrUpdateSubscriptionFromPaymentIntent(paymentIntent, userId, plan);
+
+    return res.status(200).json({
+      subscription: formatSubscription(subscription),
+      paymentStatus: paymentIntent.status
+    });
+  } catch (error) {
+    console.error('❌ Erreur confirmPayment:', error);
+    return jsonError(res, 500, 'Erreur lors de la confirmation du paiement');
+  }
+}
+
 async function handleWebhookHandler(req, res) {
   if (!stripe || !STRIPE_WEBHOOK_SECRET) {
     console.warn('⚠️ Webhook Stripe reçu mais configuration manquante');
@@ -634,6 +673,7 @@ module.exports = {
   getSubscription: getSubscriptionHandler,
   createPaymentIntent: createPaymentIntentHandler,
   createPaypalSession: createPaypalSessionHandler,
-  handleWebhook: handleWebhookHandler
+  handleWebhook: handleWebhookHandler,
+  confirmPayment: confirmPaymentHandler
 };
 
